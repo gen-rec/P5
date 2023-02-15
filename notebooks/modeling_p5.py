@@ -1,23 +1,16 @@
+import copy
 from dataclasses import dataclass
-
-from transformers.models.t5.modeling_t5 import (
-    T5Stack, T5Block, T5LayerNorm, T5LayerSelfAttention, T5LayerFF, T5LayerCrossAttention,
-    T5PreTrainedModel, T5ForConditionalGeneration
-)
+from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
 from torch.nn import CrossEntropyLoss
-
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
-import copy
-
-from transformers.modeling_outputs import ModelOutput, BaseModelOutput, BaseModelOutputWithPast, BaseModelOutputWithPastAndCrossAttentions, Seq2SeqLMOutput, Seq2SeqModelOutput
-from transformers.modeling_utils import PreTrainedModel, find_pruneable_heads_and_indices, prune_linear_layer
+from transformers.modeling_outputs import (BaseModelOutput, BaseModelOutputWithPastAndCrossAttentions, ModelOutput)
+from transformers.models.t5.modeling_t5 import (T5Block, T5ForConditionalGeneration, T5LayerNorm, T5Stack)
 from transformers.utils import logging
-from transformers import BeamScorer, BeamSearchScorer
 
 logger = logging.get_logger(__name__)
+
 
 class JointEncoder(T5Stack):
     def __init__(self, config, embed_tokens=None):
@@ -29,16 +22,16 @@ class JointEncoder(T5Stack):
         assert self.config.is_decoder is False
 
         self.block = nn.ModuleList(
-            [T5Block(config, has_relative_attention_bias=(i == 0))
-                for i in range(config.num_layers)]
+                [T5Block(config, has_relative_attention_bias=(i == 0))
+                 for i in range(config.num_layers)]
         )
         self.final_layer_norm = T5LayerNorm(
-            config.d_model, eps=config.layer_norm_epsilon)
+                config.d_model, eps=config.layer_norm_epsilon)
         self.dropout = nn.Dropout(config.dropout_rate)
-        
+
         ## Set maximum 512 whole words in a source text
         self.whole_word_embeddings = nn.Embedding(
-            512, config.d_model   ## config.d_model is 768 for base
+                512, config.d_model  ## config.d_model is 768 for base
         )
         self.init_weights()
         self.model_parallel = False
@@ -48,22 +41,22 @@ class JointEncoder(T5Stack):
         self.embed_tokens = new_embeddings
 
     def forward(
-        self,
-        input_ids=None,
-        whole_word_ids=None,
-        attention_mask=None,
-        inputs_embeds=None,
-        head_mask=None,
-        past_key_values=None,
-        use_cache=None,
-        output_attentions=None,
-        output_hidden_states=None,
-        return_dict=None,
+            self,
+            input_ids=None,
+            whole_word_ids=None,
+            attention_mask=None,
+            inputs_embeds=None,
+            head_mask=None,
+            past_key_values=None,
+            use_cache=None,
+            output_attentions=None,
+            output_hidden_states=None,
+            return_dict=None,
     ):
 
         if inputs_embeds is None:
             assert self.embed_tokens is not None, "You have to initialize the model with valid token embeddings"
-            inputs_embeds = self.embed_tokens(input_ids) ### embedding step - add HERE ###
+            inputs_embeds = self.embed_tokens(input_ids)  ### embedding step - add HERE ###
             if whole_word_ids is not None:
                 whole_word_embeds = self.whole_word_embeddings(whole_word_ids)
                 assert whole_word_embeds.shape[-1] == inputs_embeds.shape[-1]
@@ -72,13 +65,14 @@ class JointEncoder(T5Stack):
         B, L = inputs_embeds.size()[:-1]
 
         if attention_mask is None:
-            attention_mask = input_ids.ne(self.config.pad_token_id).to(dtype=inputs_embeds.dtype, device=inputs_embeds.device)
+            attention_mask = input_ids.ne(self.config.pad_token_id).to(dtype=inputs_embeds.dtype,
+                                                                       device=inputs_embeds.device)
 
         # ourselves in which case we just need to make it broadcastable to all heads.
         extended_attention_mask = self.get_extended_attention_mask(
-            attention_mask,
-            (B, L),
-            inputs_embeds.device)
+                attention_mask,
+                (B, L),
+                inputs_embeds.device)
 
         # initialize past_key_values with `None` if past does not exist
         if past_key_values is None:
@@ -103,28 +97,28 @@ class JointEncoder(T5Stack):
 
             # [1, n_heads, Q_len, K_len]
             text_position_bias = self.block[0].layer[0].SelfAttention.compute_bias(
-                L, L)
+                    L, L)
             num_heads = text_position_bias.size(1)
             position_bias = text_position_bias.new_zeros(
-                1, num_heads, seq_length, seq_length)
+                    1, num_heads, seq_length, seq_length)
             position_bias[:, :, :L, :L] = text_position_bias
 
             position_bias = position_bias + extended_attention_mask
 
             for i, (layer_module, past_key_value) in enumerate(zip(self.block, past_key_values)):
                 layer_outputs = layer_module(
-                    hidden_states,
-                    attention_mask=extended_attention_mask,
-                    position_bias=position_bias,
-                    encoder_hidden_states=None,
-                    encoder_attention_mask=None,
-                    encoder_decoder_position_bias=None,
-                    head_mask=head_mask[i],
-                    past_key_value=past_key_value,
-                    use_cache=use_cache,
-                    output_attentions=output_attentions,
+                        hidden_states,
+                        attention_mask=extended_attention_mask,
+                        position_bias=position_bias,
+                        encoder_hidden_states=None,
+                        encoder_attention_mask=None,
+                        encoder_decoder_position_bias=None,
+                        head_mask=head_mask[i],
+                        past_key_value=past_key_value,
+                        use_cache=use_cache,
+                        output_attentions=output_attentions,
                 )
-                
+
                 # layer_outputs is a tuple with:
                 # hidden-states, key-value-states, (self-attention weights), (self-attention position bias), (cross-attention weights), (cross-attention position bias)
                 hidden_states, present_key_value_state = layer_outputs[:2]
@@ -137,7 +131,7 @@ class JointEncoder(T5Stack):
                 # append next layer key value states
                 if use_cache:
                     present_key_value_states = present_key_value_states + \
-                        (present_key_value_state,)
+                                               (present_key_value_state,)
 
         hidden_states = self.final_layer_norm(hidden_states)
         hidden_states = self.dropout(hidden_states)
@@ -148,22 +142,22 @@ class JointEncoder(T5Stack):
 
         if not return_dict:
             return tuple(
-                v
-                for v in [
-                    hidden_states,
-                    present_key_value_states,
-                    all_hidden_states,
-                    all_attentions,
-                    all_cross_attentions,
-                ]
-                if v is not None
+                    v
+                    for v in [
+                        hidden_states,
+                        present_key_value_states,
+                        all_hidden_states,
+                        all_attentions,
+                        all_cross_attentions,
+                    ]
+                    if v is not None
             )
         return BaseModelOutputWithPastAndCrossAttentions(
-            last_hidden_state=hidden_states,
-            past_key_values=present_key_value_states,
-            hidden_states=all_hidden_states,
-            attentions=all_attentions,
-            cross_attentions=all_cross_attentions,
+                last_hidden_state=hidden_states,
+                past_key_values=present_key_value_states,
+                hidden_states=all_hidden_states,
+                attentions=all_attentions,
+                cross_attentions=all_cross_attentions,
         )
 
 
@@ -235,27 +229,27 @@ class P5(T5ForConditionalGeneration):
         self.decoder.config.vocab_size = vocab_size
 
     def forward(
-        self,
-        input_ids=None,
-        whole_word_ids=None,
-        attention_mask=None,
-        encoder_outputs=None,
-        decoder_input_ids=None,
-        decoder_attention_mask=None,
-        past_key_values=None,
-        use_cache=None,
-        labels=None,
-        inputs_embeds=None,
-        decoder_inputs_embeds=None,
-        head_mask=None,
-        output_attentions=None,
-        output_hidden_states=None,
-        return_dict=None,
-        reduce_loss=False,
+            self,
+            input_ids=None,
+            whole_word_ids=None,
+            attention_mask=None,
+            encoder_outputs=None,
+            decoder_input_ids=None,
+            decoder_attention_mask=None,
+            past_key_values=None,
+            use_cache=None,
+            labels=None,
+            inputs_embeds=None,
+            decoder_inputs_embeds=None,
+            head_mask=None,
+            output_attentions=None,
+            output_hidden_states=None,
+            return_dict=None,
+            reduce_loss=False,
 
-        return_hidden_state=False,
+            return_hidden_state=False,
 
-        **kwargs,
+            **kwargs,
     ):
 
         use_cache = use_cache if use_cache is not None else self.config.use_cache
@@ -263,22 +257,22 @@ class P5(T5ForConditionalGeneration):
 
         if encoder_outputs is None:
             encoder_outputs = self.encoder(
-                input_ids=input_ids,
-                whole_word_ids=whole_word_ids,
-                attention_mask=attention_mask,
-                inputs_embeds=inputs_embeds,
-                head_mask=head_mask,
-                output_attentions=output_attentions,
-                output_hidden_states=output_hidden_states,
-                return_dict=return_dict,
+                    input_ids=input_ids,
+                    whole_word_ids=whole_word_ids,
+                    attention_mask=attention_mask,
+                    inputs_embeds=inputs_embeds,
+                    head_mask=head_mask,
+                    output_attentions=output_attentions,
+                    output_hidden_states=output_hidden_states,
+                    return_dict=return_dict,
             )
         elif return_dict and not isinstance(encoder_outputs, BaseModelOutput):
             encoder_outputs = BaseModelOutput(
-                last_hidden_state=encoder_outputs[0],
-                hidden_states=encoder_outputs[1] if len(
-                    encoder_outputs) > 1 else None,
-                attentions=encoder_outputs[2] if len(
-                    encoder_outputs) > 2 else None,
+                    last_hidden_state=encoder_outputs[0],
+                    hidden_states=encoder_outputs[1] if len(
+                            encoder_outputs) > 1 else None,
+                    attentions=encoder_outputs[2] if len(
+                            encoder_outputs) > 2 else None,
             )
 
         hidden_states = encoder_outputs[0]
@@ -297,24 +291,25 @@ class P5(T5ForConditionalGeneration):
                 decoder_inputs_embeds = decoder_inputs_embeds[:, -1:]
 
         if attention_mask is None:
-            attention_mask = input_ids.ne(self.config.pad_token_id).to(dtype=hidden_states.dtype, device=hidden_states.device)
+            attention_mask = input_ids.ne(self.config.pad_token_id).to(dtype=hidden_states.dtype,
+                                                                       device=hidden_states.device)
         encoder_attention_mask = attention_mask
 
         # Decode
         decoder_outputs = self.decoder(
-            input_ids=decoder_input_ids,
-            attention_mask=decoder_attention_mask,
-            inputs_embeds=decoder_inputs_embeds,
-            past_key_values=past_key_values,
+                input_ids=decoder_input_ids,
+                attention_mask=decoder_attention_mask,
+                inputs_embeds=decoder_inputs_embeds,
+                past_key_values=past_key_values,
 
-            encoder_hidden_states=hidden_states,
-            encoder_attention_mask=encoder_attention_mask,
+                encoder_hidden_states=hidden_states,
+                encoder_attention_mask=encoder_attention_mask,
 
-            head_mask=head_mask,
-            use_cache=use_cache,
-            output_attentions=output_attentions,
-            output_hidden_states=output_hidden_states,
-            return_dict=return_dict,
+                head_mask=head_mask,
+                use_cache=use_cache,
+                output_attentions=output_attentions,
+                output_hidden_states=output_hidden_states,
+                return_dict=return_dict,
         )
 
         sequence_output = decoder_outputs[0]
@@ -336,21 +331,22 @@ class P5(T5ForConditionalGeneration):
             else:
                 loss_fct = CrossEntropyLoss(ignore_index=-100, reduction='none')
             loss = loss_fct(
-                lm_logits.view(-1, lm_logits.size(-1)),
-                labels.view(-1))
+                    lm_logits.view(-1, lm_logits.size(-1)),
+                    labels.view(-1))
 
         return P5Seq2SeqLMOutput(
-            loss=loss,
-            logits=lm_logits,
-            past_key_values=decoder_outputs.past_key_values,
-            decoder_last_hidden_state=decoder_outputs.last_hidden_state,
-            decoder_hidden_states=decoder_outputs.hidden_states,
+                loss=loss,
+                logits=lm_logits,
+                past_key_values=decoder_outputs.past_key_values,
+                decoder_last_hidden_state=decoder_outputs.last_hidden_state,
+                decoder_hidden_states=decoder_outputs.hidden_states,
         )
 
     def prepare_inputs_for_generation(
-        self, input_ids, past=None, attention_mask=None, use_cache=None,
-        encoder_outputs=None,
-        **kwargs):
+            self, input_ids, past=None, attention_mask=None, use_cache=None,
+            encoder_outputs=None,
+            **kwargs
+    ):
 
         if past is not None:
             input_ids = input_ids[:, -1:]
@@ -367,12 +363,12 @@ class P5(T5ForConditionalGeneration):
 
     @staticmethod
     def _expand_inputs_for_generation(
-        input_ids: torch.LongTensor,
-        expand_size: int = 1,
-        is_encoder_decoder: bool = False,
-        attention_mask: torch.LongTensor = None,
-        encoder_outputs: ModelOutput = None,
-        **model_kwargs
+            input_ids: torch.LongTensor,
+            expand_size: int = 1,
+            is_encoder_decoder: bool = False,
+            attention_mask: torch.LongTensor = None,
+            encoder_outputs: ModelOutput = None,
+            **model_kwargs
     ) -> Tuple[torch.LongTensor, Dict[str, Any]]:
         expanded_return_idx = (
             torch.arange(input_ids.shape[0]).view(-1, 1).repeat(1,
@@ -383,16 +379,16 @@ class P5(T5ForConditionalGeneration):
         if "token_type_ids" in model_kwargs:
             token_type_ids = model_kwargs["token_type_ids"]
             model_kwargs["token_type_ids"] = token_type_ids.index_select(
-                0, expanded_return_idx)
+                    0, expanded_return_idx)
 
         if attention_mask is not None:
             model_kwargs["attention_mask"] = attention_mask.index_select(
-                0, expanded_return_idx)
+                    0, expanded_return_idx)
 
         if is_encoder_decoder:
             assert encoder_outputs is not None
             encoder_outputs["last_hidden_state"] = encoder_outputs.last_hidden_state.index_select(
-                0, expanded_return_idx
+                    0, expanded_return_idx
             )
             model_kwargs["encoder_outputs"] = encoder_outputs
 

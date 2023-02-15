@@ -36,7 +36,6 @@ template['id'] = "1-1"
 
 task_subgroup_1["1-1"] = template
 
-
 template = {}
 '''
 Input template:
@@ -60,7 +59,6 @@ template['target_argv'] = ['star_rating']
 template['id'] = "1-2"
 
 task_subgroup_1["1-2"] = template
-
 
 template = {}
 '''
@@ -86,7 +84,6 @@ template['id'] = "1-3"
 
 task_subgroup_1["1-3"] = template
 
-
 template = {}
 '''
 Input template:
@@ -109,7 +106,6 @@ template['target_argv'] = ['like_dislike']
 template['id'] = "1-4"
 
 task_subgroup_1["1-4"] = template
-
 
 template = {}
 '''
@@ -138,7 +134,6 @@ template['id'] = "1-5"
 
 task_subgroup_1["1-5"] = template
 
-
 template = {}
 
 '''
@@ -165,7 +160,6 @@ template['id'] = "1-6"
 
 task_subgroup_1["1-6"] = template
 
-
 template = {}
 '''
 Input template:
@@ -189,7 +183,6 @@ template['target_argv'] = ['star_rating']
 template['id'] = "1-7"
 
 task_subgroup_1["1-7"] = template
-
 
 template = {}
 '''
@@ -215,7 +208,6 @@ template['id'] = "1-8"
 
 task_subgroup_1["1-8"] = template
 
-
 template = {}
 '''
 Input template:
@@ -239,7 +231,6 @@ template['id'] = "1-9"
 
 task_subgroup_1["1-9"] = template
 
-
 template = {}
 '''
 Input template:
@@ -262,9 +253,7 @@ template['id'] = "1-10"
 
 task_subgroup_1["1-10"] = template
 
-
-all_tasks['rating'] =  task_subgroup_1
-
+all_tasks['rating'] = task_subgroup_1
 
 # =====================================================
 # Task Subgroup 2 -- Sequential -- 13 Prompts 
@@ -289,7 +278,8 @@ Metrics:
 HR, NDCG, MRR
 '''
 
-template['source'] = "Given the following visit history of user_{} : \n {} \n predict next possible business to be visited by the user ?"
+template[
+    'source'] = "Given the following visit history of user_{} : \n {} \n predict next possible business to be visited by the user ?"
 template['target'] = "{}"
 template['task'] = "sequential"
 template['source_argc'] = 2
@@ -299,7 +289,6 @@ template['target_argv'] = ['item_id']
 template['id'] = "2-1"
 
 task_subgroup_2["2-1"] = template
-
 
 template = {}
 '''
@@ -316,7 +305,8 @@ Target template:
 Metrics:
 HR, NDCG, MRR
 '''
-template['source'] = "I find the visit history list of user_{} : \n {} \n I wonder what is the next item to recommend to the user . Can you help me decide ?"
+template[
+    'source'] = "I find the visit history list of user_{} : \n {} \n I wonder what is the next item to recommend to the user . Can you help me decide ?"
 template['target'] = "{}"
 template['task'] = "sequential"
 template['source_argc'] = 2
@@ -326,7 +316,6 @@ template['target_argv'] = ['item_id']
 template['id'] = "2-2"
 
 task_subgroup_2["2-2"] = template
-
 
 template = {}
 '''
@@ -352,7 +341,6 @@ template['target_argv'] = ['item_id']
 template['id'] = "2-3"
 
 task_subgroup_2["2-3"] = template
-
 
 template = {}
 
@@ -382,7 +370,6 @@ template['id'] = "2-4"
 
 task_subgroup_2["2-4"] = template
 
-
 template = {}
 '''
 Input template:
@@ -398,7 +385,8 @@ Target template:
 Metrics:
 HR, NDCG, MRR
 '''
-template['source'] = "Based on the visit history of {} : \n {} \n Can you decide the next business likely to be visited by the user ?"
+template[
+    'source'] = "Based on the visit history of {} : \n {} \n Can you decide the next business likely to be visited by the user ?"
 template['target'] = "{}"
 template['task'] = "sequential"
 template['source_argc'] = 2
@@ -408,7 +396,6 @@ template['target_argv'] = ['item_id']
 template['id'] = "2-5"
 
 task_subgroup_2["2-5"] = template
-
 
 template = {}
 '''
@@ -435,7 +422,6 @@ template['id'] = "2-6"
 
 task_subgroup_2["2-6"] = template
 
-
 # Extractive QA
 template = {}
 '''
@@ -453,7 +439,8 @@ Target template:
 Metrics:
 HR, NDCG, MRR
 '''
-template['source'] = "Here is the visit history of user_{} : \n {} \n Select the next possible business likely to be visited by the user from the following candidates : \n {}"
+template[
+    'source'] = "Here is the visit history of user_{} : \n {} \n Select the next possible business likely to be visited by the user from the following candidates : \n {}"
 template['target'] = "{}"
 template['task'] = "sequential"
 template['source_argc'] = 3
@@ -463,7 +450,6 @@ template['target_argv'] = ['item_id']
 template['id'] = "2-7"
 
 task_subgroup_2["2-7"] = template
-
 
 template = {}
 '''
@@ -480,7 +466,8 @@ Target template:
 Metrics:
 HR, NDCG, MRR
 '''
-template['source'] = "Given the following visit history of {} : \n {} \n What to recommend next for the user? Select one from the following items : \n {}"
+template[
+    'source'] = "Given the following visit history of {} : \n {} \n What to recommend next for the user? Select one from the following items : \n {}"
 template['target'] = "{}"
 template['task'] = "sequential"
 template['source_argc'] = 3
@@ -490,7 +477,6 @@ template['target_argv'] = ['item_id']
 template['id'] = "2-8"
 
 task_subgroup_2["2-8"] = template
-
 
 template = {}
 '''
@@ -508,7 +494,8 @@ Target template:
 Metrics:
 HR, NDCG, MRR
 '''
-template['source'] = "Based on the visit history of user_{} : \n {} \n Choose the next possible visited business from the following candidates : \n {}"
+template[
+    'source'] = "Based on the visit history of user_{} : \n {} \n Choose the next possible visited business from the following candidates : \n {}"
 template['target'] = "{}"
 template['task'] = "sequential"
 template['source_argc'] = 3
@@ -518,7 +505,6 @@ template['target_argv'] = ['item_id']
 template['id'] = "2-9"
 
 task_subgroup_2["2-9"] = template
-
 
 template = {}
 '''
@@ -535,7 +521,8 @@ Target template:
 Metrics:
 HR, NDCG, MRR
 '''
-template['source'] = "I find the visit history list of {} : \n {} \n I wonder which is the next item to recommend to the user . Try to select one from the following candidates : \n {}"
+template[
+    'source'] = "I find the visit history list of {} : \n {} \n I wonder which is the next item to recommend to the user . Try to select one from the following candidates : \n {}"
 template['target'] = "{}"
 template['task'] = "sequential"
 template['source_argc'] = 3
@@ -545,7 +532,6 @@ template['target_argv'] = ['item_id']
 template['id'] = "2-10"
 
 task_subgroup_2["2-10"] = template
-
 
 template = {}
 '''
@@ -571,7 +557,6 @@ template['id'] = "2-11"
 
 task_subgroup_2["2-11"] = template
 
-
 template = {}
 '''
 Input template:
@@ -596,7 +581,6 @@ template['id'] = "2-12"
 
 task_subgroup_2["2-12"] = template
 
-
 template = {}
 '''
 Input template:
@@ -611,7 +595,8 @@ Target template:
 Metrics:
 HR, NDCG, MRR
 '''
-template['source'] = "According to the visit history of {} : \n {} \n Can you recommend the next possible business to the user ?"
+template[
+    'source'] = "According to the visit history of {} : \n {} \n Can you recommend the next possible business to the user ?"
 template['target'] = "{}"
 template['task'] = "sequential"
 template['source_argc'] = 2
@@ -622,9 +607,7 @@ template['id'] = "2-13"
 
 task_subgroup_2["2-13"] = template
 
-
-all_tasks['sequential'] =  task_subgroup_2
-
+all_tasks['sequential'] = task_subgroup_2
 
 # ====================================================
 # Task Subgroup 3 -- Explanation -- 10 Prompts
@@ -658,7 +641,6 @@ template['id'] = "3-1"
 
 task_subgroup_3["3-1"] = template
 
-
 template = {}
 '''
 Input template:
@@ -683,7 +665,6 @@ template['target_argv'] = ['explanation']
 template['id'] = "3-2"
 
 task_subgroup_3["3-2"] = template
-
 
 template = {}
 
@@ -711,7 +692,6 @@ template['id'] = "3-3"
 
 task_subgroup_3["3-3"] = template
 
-
 template = {}
 '''
 Input template:
@@ -736,7 +716,6 @@ template['id'] = "3-4"
 
 task_subgroup_3["3-4"] = template
 
-
 template = {}
 
 '''
@@ -752,7 +731,8 @@ Metrics:
 BLUE, ROUGE
 '''
 
-template['source'] = "Predict the star rating , then use {} as feature word to generate user_{} 's visit explanation for item_{}"
+template[
+    'source'] = "Predict the star rating , then use {} as feature word to generate user_{} 's visit explanation for item_{}"
 template['target'] = "{} , {}"
 template['task'] = "explanation"
 template['source_argc'] = 3
@@ -762,7 +742,6 @@ template['target_argv'] = ['star_rating', 'explanation']
 template['id'] = "3-5"
 
 task_subgroup_3["3-5"] = template
-
 
 template = {}
 
@@ -779,7 +758,8 @@ Metrics:
 BLUE, ROUGE
 '''
 
-template['source'] = "What score will {} rate item_{} ? Then give an explanation for the rating score . ( 1 being lowest and 5 being highest )"
+template[
+    'source'] = "What score will {} rate item_{} ? Then give an explanation for the rating score . ( 1 being lowest and 5 being highest )"
 template['target'] = "{} , {}"
 template['task'] = "explanation"
 template['source_argc'] = 2
@@ -789,7 +769,6 @@ template['target_argv'] = ['star_rating', 'explanation']
 template['id'] = "3-6"
 
 task_subgroup_3["3-6"] = template
-
 
 template = {}
 '''
@@ -817,7 +796,6 @@ template['id'] = "3-7"
 
 task_subgroup_3["3-7"] = template
 
-
 template = {}
 '''
 Input template:
@@ -843,7 +821,6 @@ template['target_argv'] = ['explanation']
 template['id'] = "3-8"
 
 task_subgroup_3["3-8"] = template
-
 
 template = {}
 '''
@@ -871,7 +848,6 @@ template['id'] = "3-9"
 
 task_subgroup_3["3-9"] = template
 
-
 template = {}
 '''
 Name:
@@ -898,9 +874,7 @@ template['id'] = "3-10"
 
 task_subgroup_3["3-10"] = template
 
-
 all_tasks['explanation'] = task_subgroup_3
-
 
 # ====================================================
 # Task Subgroup 4 -- Review -- 3 Prompts
@@ -922,7 +896,8 @@ Target template:
 Metrics:
 Accuracy
 '''
-template['source'] = "Predict the associated rating score of the review written by user_{} ( 1 being lowest and 5 being highest ) : \n {}"
+template[
+    'source'] = "Predict the associated rating score of the review written by user_{} ( 1 being lowest and 5 being highest ) : \n {}"
 template['target'] = "{}"
 template['task'] = "review"
 template['source_argc'] = 2
@@ -932,7 +907,6 @@ template['target_argv'] = ['star_rating']
 template['id'] = "4-1"
 
 task_subgroup_4["4-1"] = template
-
 
 template = {}
 '''
@@ -949,7 +923,8 @@ Target template:
 Metrics:
 Accuracy
 '''
-template['source'] = "Given the following review written by user_{} : \n {} \n Can you predict the associated star rating ? ( 1 being lowest and 5 being highest )"
+template[
+    'source'] = "Given the following review written by user_{} : \n {} \n Can you predict the associated star rating ? ( 1 being lowest and 5 being highest )"
 template['target'] = "{}"
 template['task'] = "review"
 template['source_argc'] = 2
@@ -959,7 +934,6 @@ template['target_argv'] = ['star_rating']
 template['id'] = "4-2"
 
 task_subgroup_4["4-2"] = template
-
 
 template = {}
 '''
@@ -976,7 +950,8 @@ Target template:
 Metrics:
 Accuracy
 '''
-template['source'] = "According to the following review written by {} : \n {} \n Predict the associated star rating ( 1 being lowest and 5 being highest )"
+template[
+    'source'] = "According to the following review written by {} : \n {} \n Predict the associated star rating ( 1 being lowest and 5 being highest )"
 template['target'] = "{}"
 template['task'] = "review"
 template['source_argc'] = 2
@@ -987,9 +962,7 @@ template['id'] = "4-3"
 
 task_subgroup_4["4-3"] = template
 
-
 all_tasks['review'] = task_subgroup_4
-
 
 # =====================================================
 # Task Subgroup 5 -- Traditional -- 8 Prompts
@@ -1025,7 +998,6 @@ template['id'] = "5-1"
 
 task_subgroup_5["5-1"] = template
 
-
 template = {}
 
 '''
@@ -1051,7 +1023,6 @@ template['target_argv'] = ['yes_no']
 template['id'] = "5-2"
 
 task_subgroup_5["5-2"] = template
-
 
 template = {}
 
@@ -1079,7 +1050,6 @@ template['id'] = "5-3"
 
 task_subgroup_5["5-3"] = template
 
-
 template = {}
 
 '''
@@ -1106,7 +1076,6 @@ template['target_argv'] = ['yes_no']
 template['id'] = "5-4"
 
 task_subgroup_5["5-4"] = template
-
 
 ## Extractive QA - 4 prompts
 template = {}
@@ -1136,7 +1105,6 @@ template['id'] = "5-5"
 
 task_subgroup_5["5-5"] = template
 
-
 template = {}
 
 '''
@@ -1163,7 +1131,6 @@ template['target_argv'] = ['groundtruth_item_ids']
 template['id'] = "5-6"
 
 task_subgroup_5["5-6"] = template
-
 
 template = {}
 
@@ -1192,7 +1159,6 @@ template['id'] = "5-7"
 
 task_subgroup_5["5-7"] = template
 
-
 template = {}
 
 '''
@@ -1219,6 +1185,5 @@ template['target_argv'] = ['groundtruth_item_ids']
 template['id'] = "5-8"
 
 task_subgroup_5["5-8"] = template
-
 
 all_tasks['traditional'] = task_subgroup_5

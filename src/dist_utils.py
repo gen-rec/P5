@@ -6,12 +6,11 @@ This is useful when doing distributed training.
 
 import functools
 import logging
-import numpy as np
 import pickle
+
+import numpy as np
 import torch
 import torch.distributed as dist
-
-import torch
 
 _LOCAL_PROCESS_GROUP = None
 """
@@ -102,9 +101,9 @@ def _serialize_to_tensor(data, group):
     if len(buffer) > 1024 ** 3:
         logger = logging.getLogger(__name__)
         logger.warning(
-            "Rank {} trying to all-gather {:.2f} GB of data on device {}".format(
-                get_rank(), len(buffer) / (1024 ** 3), device
-            )
+                "Rank {} trying to all-gather {:.2f} GB of data on device {}".format(
+                        get_rank(), len(buffer) / (1024 ** 3), device
+                )
         )
     storage = torch.ByteStorage.from_buffer(buffer)
     tensor = torch.ByteTensor(storage).to(device=device)
@@ -119,10 +118,10 @@ def _pad_to_largest_tensor(tensor, group):
     """
     world_size = dist.get_world_size(group=group)
     assert (
-        world_size >= 1
+            world_size >= 1
     ), "comm.gather/all_gather must be called from ranks within the given group!"
     local_size = torch.tensor(
-        [tensor.numel()], dtype=torch.int64, device=tensor.device)
+            [tensor.numel()], dtype=torch.int64, device=tensor.device)
     size_list = [
         torch.zeros([1], dtype=torch.int64, device=tensor.device)
         for _ in range(world_size)
@@ -136,7 +135,7 @@ def _pad_to_largest_tensor(tensor, group):
     # gathering tensors of different shapes
     if local_size != max_size:
         padding = torch.zeros(
-            (max_size - local_size,), dtype=torch.uint8, device=tensor.device
+                (max_size - local_size,), dtype=torch.uint8, device=tensor.device
         )
         tensor = torch.cat((tensor, padding), dim=0)
     return size_list, tensor
@@ -265,7 +264,7 @@ def reduce_dict(input_dict, average=True):
             names.append(k)
             values.append(v)
         values = torch.stack(values, dim=0)
-        dist.reduce(values, dst=0) # reduce to gpu 0
+        dist.reduce(values, dst=0)  # reduce to gpu 0
 
         if dist.get_rank() == 0 and average:
             # only main process gets accumulated, so only divide by

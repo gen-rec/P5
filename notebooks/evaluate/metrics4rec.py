@@ -1,8 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
-import math
-import numpy as np
 import heapq
+import math
+
+import numpy as np
 
 
 def evaluate_old(predict, groundtruth, topk=10):
@@ -50,7 +51,7 @@ def evaluate_old(predict, groundtruth, topk=10):
     avg_ndcg = np.mean(ndcgs)
     avg_hit = np.mean(hits)
     msg = "NDCG={:.4f} |  Recall={:.4f} | HR={:.4f} | Precision={:.4f} | Invalid users={}".format(
-        avg_ndcg, avg_recall, avg_hit, avg_precision, len(invalid_users)
+            avg_ndcg, avg_recall, avg_hit, avg_precision, len(invalid_users)
     )
     print(msg)
     return msg
@@ -301,7 +302,7 @@ def evaluate_all(user_item_scores, groudtruth, topk=10):
         ui_scores = list(user_item_scores[uid].items())
         np.random.shuffle(ui_scores)  # break ties
         # topk_preds = heapq.nlargest(topk, user_item_scores[uid], key=user_item_scores[uid].get)  # list of k <item_id>
-        topk_preds = heapq.nlargest(topk, ui_scores, key=lambda x: x[1]) # list of k tuples
+        topk_preds = heapq.nlargest(topk, ui_scores, key=lambda x: x[1])  # list of k tuples
         topk_preds = [x[0] for x in topk_preds]  # list of k <item_id>
         # print(topk_preds, groudtruth[uid])
         result = evaluate_once(topk_preds, groudtruth[uid])

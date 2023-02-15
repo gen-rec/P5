@@ -1,22 +1,13 @@
-import torch.backends.cudnn as cudnn
-import torch.multiprocessing as mp
-import torch.distributed as dist
-from torch.nn.parallel import DistributedDataParallel as DDP
-import os
-import collections
-from pathlib import Path
-from packaging import version
-
-import numpy as np
-from tqdm import tqdm
-import torch
-import torch.nn as nn
 import logging
-import shutil
+import os
+from pathlib import Path
 from pprint import pprint
 
-from utils import load_state_dict, LossMeter, set_global_logging_level
-from pprint import pformat
+import torch
+import torch.nn as nn
+from packaging import version
+
+from utils import load_state_dict, set_global_logging_level
 
 proj_dir = Path(__file__).resolve().parent.parent
 
@@ -26,12 +17,12 @@ _use_apex = False
 # Check if Pytorch version >= 1.6 to switch between Native AMP and Apex
 if version.parse(torch.__version__) < version.parse("1.6"):
     from transormers.file_utils import is_apex_available
+
     if is_apex_available():
-        from apex import amp
+        pass
     _use_apex = True
 else:
     _use_native_amp = True
-    from torch.cuda.amp import autocast
 
 
 class TrainerBase(object):
@@ -80,15 +71,14 @@ class TrainerBase(object):
         model_name = self.args.backbone
 
         model = model_class.from_pretrained(
-            model_name,
-            config=config,
-            **kwargs
+                model_name,
+                config=config,
+                **kwargs
         )
         return model
 
     def create_tokenizer(self, **kwargs):
-        from transformers import T5Tokenizer, T5TokenizerFast
-        from tokenization import P5Tokenizer, P5TokenizerFast
+        from tokenization import P5Tokenizer
 
         if 'p5' in self.args.tokenizer:
             tokenizer_class = P5Tokenizer
@@ -96,11 +86,11 @@ class TrainerBase(object):
         tokenizer_name = self.args.backbone
 
         tokenizer = tokenizer_class.from_pretrained(
-            tokenizer_name,
-            max_length=self.args.max_text_length,
-            do_lower_case=self.args.do_lower_case,
-            **kwargs
-            )
+                tokenizer_name,
+                max_length=self.args.max_text_length,
+                do_lower_case=self.args.do_lower_case,
+                **kwargs
+        )
 
         return tokenizer
 
@@ -117,7 +107,7 @@ class TrainerBase(object):
             t_total = batch_per_epoch // self.args.gradient_accumulation_steps * self.args.epoch
             warmup_ratio = self.args.warmup_ratio
             warmup_iters = int(t_total * warmup_ratio)
-            
+
             if self.verbose:
                 print("Batch per epoch: %d" % batch_per_epoch)
                 print("Total Iters: %d" % t_total)
@@ -139,11 +129,11 @@ class TrainerBase(object):
             optim = AdamW(optimizer_grouped_parameters,
                           lr=self.args.lr, eps=self.args.adam_eps)
             lr_scheduler = get_linear_schedule_with_warmup(
-                optim, warmup_iters, t_total)
+                    optim, warmup_iters, t_total)
 
         else:
             optim = self.args.optimizer(
-                list(self.model.parameters()), self.args.lr)
+                    list(self.model.parameters()), self.args.lr)
 
         return optim, lr_scheduler
 
@@ -165,6 +155,7 @@ class TrainerBase(object):
                 module.weight.data.fill_(1.0)
             if isinstance(module, nn.Linear) and module.bias is not None:
                 module.bias.data.zero_()
+
         self.model.apply(init_bert_weights)
         self.model.init_weights()
 

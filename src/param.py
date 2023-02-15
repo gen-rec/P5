@@ -1,10 +1,9 @@
 import argparse
+import pprint
 import random
 
 import numpy as np
 import torch
-
-import pprint
 import yaml
 
 

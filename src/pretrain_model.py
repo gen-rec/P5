@@ -1,9 +1,7 @@
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
 
 from modeling_p5 import P5
+
 
 class P5Pretraining(P5):
     def __init__(self, config):
@@ -22,10 +20,10 @@ class P5Pretraining(P5):
         loss_weights = batch["loss_weights"].to(device)
 
         output = self(
-            input_ids=input_ids,
-            whole_word_ids=whole_word_ids,
-            labels=lm_labels,
-            return_dict=True
+                input_ids=input_ids,
+                whole_word_ids=whole_word_ids,
+                labels=lm_labels,
+                return_dict=True
         )
         assert 'loss' in output
 
@@ -73,9 +71,9 @@ class P5Pretraining(P5):
         loss_weights = batch["loss_weights"].to(device)
 
         output = self(
-            input_ids=input_ids,
-            labels=lm_labels,
-            return_dict=True
+                input_ids=input_ids,
+                labels=lm_labels,
+                return_dict=True
         )
         assert 'loss' in output
 
@@ -109,7 +107,7 @@ class P5Pretraining(P5):
 
         if 'rating' in self.losses:
             output = self.generate(
-                input_ids=input_ids
+                    input_ids=input_ids
             )
 
             generated_score = self.tokenizer.batch_decode(output, skip_special_tokens=True)
@@ -125,7 +123,7 @@ class P5Pretraining(P5):
         input_ids = batch['input_ids'].to(device)
 
         output = self.generate(
-            input_ids=input_ids,
+                input_ids=input_ids,
         )
 
         generated_sents = self.tokenizer.batch_decode(output, skip_special_tokens=True)

@@ -1,12 +1,14 @@
-import os
-import math
-import torch
-import heapq
-import random
-import pickle
 import datetime
-from .rouge import rouge
+import heapq
+import math
+import os
+import pickle
+import random
+
+import torch
+
 from .bleu import compute_bleu
+from .rouge import rouge
 
 
 def rouge_score(references, generated):

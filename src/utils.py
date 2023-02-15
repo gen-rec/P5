@@ -1,9 +1,8 @@
-import re
-import numpy as np
-import torch
-import torch.distributed as dist
 import collections
 import logging
+import re
+
+import torch
 
 
 class LossMeter(object):
@@ -51,7 +50,7 @@ def set_global_logging_level(level=logging.ERROR, prefices=[""]):
           Default is `[""]` to match all active loggers.
           The match is a case-sensitive `module_name.startswith(prefix)`
     """
-    prefix_re = re.compile(fr'^(?:{ "|".join(prefices) })')
+    prefix_re = re.compile(fr'^(?:{"|".join(prefices)})')
     for name in logging.root.manager.loggerDict:
         if re.match(prefix_re, name):
             logging.getLogger(name).setLevel(level)

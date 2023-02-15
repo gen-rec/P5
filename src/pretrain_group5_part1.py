@@ -1,30 +1,24 @@
-import collections
-import os
-import random
 from pathlib import Path
-import logging
-import shutil
-from packaging import version
 
-from tqdm import tqdm
-import numpy as np
 import torch
-import torch.nn as nn
-from torch.nn.parallel import DistributedDataParallel as DDP
-import torch.distributed as dist
 import torch.backends.cudnn as cudnn
+import torch.distributed as dist
+from packaging import version
+from torch.nn.parallel import DistributedDataParallel as DDP
+from tqdm import tqdm
 
+from dist_utils import reduce_dict
 from param import parse_args
 from pretrain_data import get_loader
 from utils import LossMeter
-from dist_utils import reduce_dict
 
 _use_native_amp = False
 _use_apex = False
 
 # Check if Pytorch version >= 1.6 to switch between Native AMP and Apex
 if version.parse(torch.__version__) < version.parse("1.6"):
-    from transormers.file_utils import is_apex_available
+    from transformers.file_utils import is_apex_available
+
     if is_apex_available():
         from apex import amp
     _use_apex = True
@@ -34,14 +28,15 @@ else:
 
 from trainer_base import TrainerBase
 
+
 class Trainer(TrainerBase):
     def __init__(self, args, train_loader=None, val_loader=None, test_loader=None, train=True):
         super().__init__(
-            args,
-            train_loader=train_loader,
-            val_loader=val_loader,
-            test_loader=test_loader,
-            train=train)
+                args,
+                train_loader=train_loader,
+                val_loader=val_loader,
+                test_loader=test_loader,
+                train=train)
 
         assert args.whole_word_embed
         from pretrain_model import P5Pretraining
@@ -83,7 +78,7 @@ class Trainer(TrainerBase):
                 self.scaler = torch.cuda.amp.GradScaler()
             elif _use_apex:
                 self.model, self.optim = amp.initialize(
-                    self.model, self.optim, opt_level='O1', verbosity=self.verbose)
+                        self.model, self.optim, opt_level='O1', verbosity=self.verbose)
 
         if args.multiGPU:
             if args.distributed:
@@ -229,9 +224,9 @@ class Trainer(TrainerBase):
 
                 for name, loss in results.items():
                     if name[-4:] == 'loss':
-                        loss_count = int(results[name+'_count'])
+                        loss_count = int(results[name + '_count'])
                         if loss_count > 0:
-                            avg_loss = loss/loss_count
+                            avg_loss = loss / loss_count
                             losses_str += f"{name} ({loss_count}): {avg_loss:.3f} "
 
                 losses_str += '\n'
@@ -253,7 +248,7 @@ class Trainer(TrainerBase):
 
                     for name, loss in valid_results.items():
                         if name[-4:] == 'loss':
-                            loss_count = int(valid_results[name+'_count'])
+                            loss_count = int(valid_results[name + '_count'])
                             if loss_count > 0:
                                 avg_loss = loss / loss_count
                                 losses_str += f"{name} ({loss_count}): {avg_loss:.3f} "
@@ -275,7 +270,7 @@ class Trainer(TrainerBase):
                 # Skip validation
                 print("Skip validation for Epoch%02d" % (epoch + 1))
                 self.save("Epoch%02d" % (epoch + 1))
-                
+
                 dist.barrier()
 
     def evaluate_epoch(self, epoch):
@@ -341,39 +336,40 @@ def main_worker(gpu, args):
     print(f'Building train loader at GPU {gpu}')
     if args.train == 'yelp':
         train_task_list = {'traditional': ['5-1', '5-2', '5-3', '5-4']
-        }
+                           }
     else:
         train_task_list = {'traditional': ['5-1', '5-2', '5-3', '5-4']
-        }
-    train_sample_numbers = {'rating': 1, 'sequential': (5, 5, 10), 'explanation': 1, 'review': 1, 'traditional': (100, 5)} # Change sampling number for different datasets and model sizes
+                           }
+    train_sample_numbers = {'rating': 1, 'sequential': (5, 5, 10), 'explanation': 1, 'review': 1,
+                            'traditional': (100, 5)}  # Change sampling number for different datasets and model sizes
     train_loader = get_loader(
-        args,
-        train_task_list,
-        train_sample_numbers,
-        split=args.train, 
-        mode='train',
-        batch_size=args.batch_size,
-        workers=args.num_workers,
-        distributed=args.distributed
+            args,
+            train_task_list,
+            train_sample_numbers,
+            split=args.train,
+            mode='train',
+            batch_size=args.batch_size,
+            workers=args.num_workers,
+            distributed=args.distributed
     )
 
     print(f'Building val loader at GPU {gpu}')
     if args.valid == 'yelp':
         val_task_list = {'traditional': ['5-1', '5-2', '5-3', '5-4']
-        }
+                         }
     else:
         val_task_list = {'traditional': ['5-1', '5-2', '5-3', '5-4']
-        }
+                         }
     val_sample_numbers = {'rating': 1, 'sequential': (1, 1, 1), 'explanation': 1, 'review': 1, 'traditional': (1, 1)}
     val_loader = get_loader(
-        args,
-        val_task_list,
-        val_sample_numbers,
-        split=args.valid, 
-        mode='val',
-        batch_size=args.batch_size,
-        workers=args.num_workers,
-        distributed=args.distributed
+            args,
+            val_task_list,
+            val_sample_numbers,
+            split=args.valid,
+            mode='val',
+            batch_size=args.batch_size,
+            workers=args.num_workers,
+            distributed=args.distributed
     )
 
     trainer = Trainer(args, train_loader, val_loader, train=True)
@@ -415,6 +411,7 @@ if __name__ == "__main__":
     comment = '_'.join(comments)
 
     from datetime import datetime
+
     current_time = datetime.now().strftime('%b%d_%H-%M')
 
     project_dir = Path(__file__).resolve().parent.parent
