@@ -6,7 +6,9 @@ from pprint import pprint
 import torch
 import torch.nn as nn
 from packaging import version
+from transformers import T5Tokenizer
 
+from src.pretrain_model import P5Pretraining
 from utils import load_state_dict, set_global_logging_level
 
 proj_dir = Path(__file__).resolve().parent.parent
@@ -36,6 +38,7 @@ class TrainerBase(object):
         self.verbose = True
         if self.args.distributed:
             if self.args.gpu != 0:
+                # pass
                 self.verbose = False
 
         if self.args.tokenizer is None:
@@ -65,7 +68,7 @@ class TrainerBase(object):
 
         return config
 
-    def create_model(self, model_class, config=None, **kwargs):
+    def create_model(self, model_class, config=None, **kwargs) -> P5Pretraining:
         print(f'Building Model at GPU {self.args.gpu}')
 
         model_name = self.args.backbone
@@ -77,22 +80,22 @@ class TrainerBase(object):
         )
         return model
 
-    def create_tokenizer(self, **kwargs):
-        from tokenization import P5Tokenizer
-
-        if 'p5' in self.args.tokenizer:
-            tokenizer_class = P5Tokenizer
-
-        tokenizer_name = self.args.backbone
-
-        tokenizer = tokenizer_class.from_pretrained(
-                tokenizer_name,
-                max_length=self.args.max_text_length,
-                do_lower_case=self.args.do_lower_case,
-                **kwargs
-        )
-
-        return tokenizer
+    # def create_tokenizer(self, **kwargs):
+    #     raise NotImplementedError
+    #
+    #     if 'p5' in self.args.tokenizer:
+    #         tokenizer_class = T5Tokenizer
+    #
+    #     tokenizer_name = self.args.backbone
+    #
+    #     tokenizer = tokenizer_class.from_pretrained(
+    #             tokenizer_name,
+    #             max_length=self.args.max_text_length,
+    #             do_lower_case=self.args.do_lower_case,
+    #             **kwargs
+    #     )
+    #
+    #     return tokenizer
 
     def create_optimizer_and_scheduler(self):
         if self.verbose:

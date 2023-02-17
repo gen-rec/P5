@@ -8,6 +8,7 @@ class P5Pretraining(P5):
         super().__init__(config)
 
         self.losses = self.config.losses.split(',')
+        self.tokenizer = None
 
     def train_step(self, batch):
 

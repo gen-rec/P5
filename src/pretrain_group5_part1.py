@@ -30,7 +30,7 @@ from trainer_base import TrainerBase
 
 
 class Trainer(TrainerBase):
-    def __init__(self, args, train_loader=None, val_loader=None, test_loader=None, train=True):
+    def __init__(self, args, train_loader=None, val_loader=None, test_loader=None, train=True, tokenizer=None):
         super().__init__(
                 args,
                 train_loader=train_loader,
@@ -41,11 +41,14 @@ class Trainer(TrainerBase):
         assert args.whole_word_embed
         from pretrain_model import P5Pretraining
 
+        assert tokenizer is not None
+        self.tokenizer = tokenizer
+
         model_kwargs = {}
         model_class = P5Pretraining
 
         config = self.create_config()
-        self.tokenizer = self.create_tokenizer()
+        # self.tokenizer = self.create_tokenizer()
         self.model = self.create_model(model_class, config, **model_kwargs)
 
         if 'p5' in self.args.tokenizer:
@@ -119,7 +122,7 @@ class Trainer(TrainerBase):
             self.model.train()
 
             if self.verbose:
-                pbar = tqdm(total=len(self.train_loader), ncols=275)
+                pbar = tqdm(total=len(self.train_loader), ncols=120)
 
             epoch_results = {}
             for loss_name in LOSSES_NAME:
@@ -287,7 +290,7 @@ class Trainer(TrainerBase):
                 loss_meter = LossMeter()
                 loss_meters = [LossMeter() for _ in range(len(LOSSES_NAME))]
 
-                pbar = tqdm(total=len(self.val_loader), ncols=275)
+                pbar = tqdm(total=len(self.val_loader), ncols=120)
 
             for step_i, batch in enumerate(self.val_loader):
 
