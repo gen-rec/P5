@@ -35,6 +35,9 @@ class JointEncoder(T5Stack):
         self.whole_word_embeddings = nn.Embedding(
                 512, config.d_model  ## config.d_model is 768 for base
         )
+        ####
+        torch.nn.init.zeros_(self.whole_word_embeddings.weight)
+        ####
         self.init_weights()
         self.model_parallel = False
         self.device_map = None
@@ -48,7 +51,7 @@ class JointEncoder(T5Stack):
             whole_word_ids=None,
             attention_mask=None,
             inputs_embeds=None,
-            layer_head_mask=None,
+            head_mask=None,
             past_key_values=None,
             use_cache=None,
             output_attentions=None,
@@ -81,7 +84,7 @@ class JointEncoder(T5Stack):
             past_key_values = [None] * len(self.block)
 
         # Prepare head mask if needed
-        layer_head_mask = self.get_head_mask(layer_head_mask, self.config.num_layers)
+        head_mask = self.get_head_mask(head_mask, self.config.num_layers)
         present_key_value_states = () if use_cache else None
         all_hidden_states = () if output_hidden_states else None
         all_attentions = () if output_attentions else None
@@ -115,7 +118,7 @@ class JointEncoder(T5Stack):
                         encoder_hidden_states=None,
                         encoder_attention_mask=None,
                         encoder_decoder_position_bias=None,
-                        layer_head_mask=layer_head_mask[i],
+                        head_mask=head_mask[i],
                         past_key_value=past_key_value,
                         use_cache=use_cache,
                         output_attentions=output_attentions,
@@ -243,7 +246,7 @@ class P5(T5ForConditionalGeneration):
             labels=None,
             inputs_embeds=None,
             decoder_inputs_embeds=None,
-            layer_head_mask=None,
+            head_mask=None,
             output_attentions=None,
             output_hidden_states=None,
             return_dict=None,
@@ -263,7 +266,7 @@ class P5(T5ForConditionalGeneration):
                     whole_word_ids=whole_word_ids,
                     attention_mask=attention_mask,
                     inputs_embeds=inputs_embeds,
-                    layer_head_mask=layer_head_mask,
+                    head_mask=head_mask,
                     output_attentions=output_attentions,
                     output_hidden_states=output_hidden_states,
                     return_dict=return_dict,
@@ -307,7 +310,7 @@ class P5(T5ForConditionalGeneration):
                 encoder_hidden_states=hidden_states,
                 encoder_attention_mask=encoder_attention_mask,
 
-                layer_head_mask=layer_head_mask,
+                head_mask=head_mask,
                 use_cache=use_cache,
                 output_attentions=output_attentions,
                 output_hidden_states=output_hidden_states,

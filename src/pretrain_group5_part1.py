@@ -122,7 +122,7 @@ class Trainer(TrainerBase):
             self.model.train()
 
             if self.verbose:
-                pbar = tqdm(total=len(self.train_loader), ncols=120)
+                pbar = tqdm(total=len(self.train_loader), ncols=240)
 
             epoch_results = {}
             for loss_name in LOSSES_NAME:
@@ -290,7 +290,7 @@ class Trainer(TrainerBase):
                 loss_meter = LossMeter()
                 loss_meters = [LossMeter() for _ in range(len(LOSSES_NAME))]
 
-                pbar = tqdm(total=len(self.val_loader), ncols=120)
+                pbar = tqdm(total=len(self.val_loader), ncols=240)
 
             for step_i, batch in enumerate(self.val_loader):
 

@@ -122,7 +122,7 @@ class Trainer(TrainerBase):
             self.model.train()
 
             if self.verbose:
-                pbar = tqdm(total=len(self.train_loader), ncols=120)
+                pbar = tqdm(total=len(self.train_loader), ncols=240)
 
             epoch_results = {}
             for loss_name in LOSSES_NAME:
@@ -290,7 +290,7 @@ class Trainer(TrainerBase):
                 loss_meter = LossMeter()
                 loss_meters = [LossMeter() for _ in range(len(LOSSES_NAME))]
 
-                pbar = tqdm(total=len(self.val_loader), ncols=120)
+                pbar = tqdm(total=len(self.val_loader), ncols=240)
 
             for step_i, batch in enumerate(self.val_loader):
 
@@ -369,6 +369,8 @@ def main_worker(gpu, args):
 
     num_added_tokens = tokenizer.add_tokens(user_ids + item_ids, special_tokens=True)
     print(f"Added {num_added_tokens} tokens to the tokenizer", flush=True)
+
+    tokenizer.save_pretrained(args.output)
     ####
 
     train_loader = get_loader(
