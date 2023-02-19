@@ -111,6 +111,9 @@ def parse_args(parse=True, **optional_kwargs):
     parser.add_argument('--comment', type=str, default='')
     parser.add_argument("--dry", action='store_true')
 
+    # Select a specific task
+    parser.add_argument("--task_index", type=int, default=None)
+
     # Parse the arguments.
     if parse:
         args = parser.parse_args()
