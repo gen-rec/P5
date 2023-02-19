@@ -40,7 +40,7 @@ class P5_Amazon_Dataset(Dataset):
     def __init__(
             self, all_tasks, task_list, tokenizer, args, sample_numbers, mode='train', split='toys',
             rating_augment=False, sample_type='random'
-            ):
+    ):
         self.all_tasks = all_tasks
         self.task_list = task_list
         self.tokenizer = tokenizer
@@ -186,19 +186,19 @@ class P5_Amazon_Dataset(Dataset):
         if self.mode == 'train':
             if int(datum['overall']) == 1:
                 sampled_rating = round(
-                    torch.normal(mean=torch.tensor((1.0 + 1.4) / 2), std=torch.tensor((1.4 - 1.0) / 4)).item(), 1)
+                        torch.normal(mean=torch.tensor((1.0 + 1.4) / 2), std=torch.tensor((1.4 - 1.0) / 4)).item(), 1)
             elif int(datum['overall']) == 2:
                 sampled_rating = round(
-                    torch.normal(mean=torch.tensor((1.5 + 2.4) / 2), std=torch.tensor((2.4 - 1.5) / 4)).item(), 1)
+                        torch.normal(mean=torch.tensor((1.5 + 2.4) / 2), std=torch.tensor((2.4 - 1.5) / 4)).item(), 1)
             elif int(datum['overall']) == 3:
                 sampled_rating = round(
-                    torch.normal(mean=torch.tensor((2.5 + 3.4) / 2), std=torch.tensor((3.4 - 2.5) / 4)).item(), 1)
+                        torch.normal(mean=torch.tensor((2.5 + 3.4) / 2), std=torch.tensor((3.4 - 2.5) / 4)).item(), 1)
             elif int(datum['overall']) == 4:
                 sampled_rating = round(
-                    torch.normal(mean=torch.tensor((3.5 + 4.4) / 2), std=torch.tensor((4.4 - 3.5) / 4)).item(), 1)
+                        torch.normal(mean=torch.tensor((3.5 + 4.4) / 2), std=torch.tensor((4.4 - 3.5) / 4)).item(), 1)
             else:
                 sampled_rating = round(
-                    torch.normal(mean=torch.tensor((4.5 + 5.0) / 2), std=torch.tensor((5.0 - 4.5) / 4)).item(), 1)
+                        torch.normal(mean=torch.tensor((4.5 + 5.0) / 2), std=torch.tensor((5.0 - 4.5) / 4)).item(), 1)
             if sampled_rating > 5.0:
                 sampled_rating = 5.0
             if sampled_rating < 1.0:
@@ -904,13 +904,16 @@ class P5_Amazon_Dataset(Dataset):
 
         self.tokenizer: T5TokenizerFast
         input_ids = self.tokenizer.encode(
-                source_text, padding=True, truncation=True, max_length=self.args.max_text_length)
-        tokenized_text = self.tokenizer.tokenize(source_text)
+                source_text, padding=True, truncation=True, max_length=self.args.max_text_length
+        )
+        tokenized_text = self.tokenizer.tokenize(source_text, padding=True, truncation=True,
+                                                 max_length=self.args.max_text_length)
         whole_word_ids = self.calculate_whole_word_ids(tokenized_text, input_ids)
         assert len(whole_word_ids) == len(input_ids)
 
         target_ids = self.tokenizer.encode(
-                target_text, padding=True, truncation=True, max_length=self.args.gen_max_length)
+                target_text, padding=True, truncation=True, max_length=self.args.gen_max_length
+        )
 
         out_dict['input_ids'] = torch.LongTensor(input_ids)
         out_dict['input_length'] = len(input_ids)
@@ -1002,7 +1005,7 @@ class P5_Yelp_Dataset(Dataset):
     def __init__(
             self, all_tasks, task_list, tokenizer, args, sample_numbers, mode='train', split='yelp',
             rating_augment=False, sample_type='random'
-            ):
+    ):
         self.all_tasks = all_tasks
         self.task_list = task_list
         self.tokenizer = tokenizer
@@ -1135,19 +1138,19 @@ class P5_Yelp_Dataset(Dataset):
         if self.mode == 'train':
             if int(datum['overall']) == 1:
                 sampled_rating = round(
-                    torch.normal(mean=torch.tensor((1.0 + 1.4) / 2), std=torch.tensor((1.4 - 1.0) / 4)).item(), 1)
+                        torch.normal(mean=torch.tensor((1.0 + 1.4) / 2), std=torch.tensor((1.4 - 1.0) / 4)).item(), 1)
             elif int(datum['overall']) == 2:
                 sampled_rating = round(
-                    torch.normal(mean=torch.tensor((1.5 + 2.4) / 2), std=torch.tensor((2.4 - 1.5) / 4)).item(), 1)
+                        torch.normal(mean=torch.tensor((1.5 + 2.4) / 2), std=torch.tensor((2.4 - 1.5) / 4)).item(), 1)
             elif int(datum['overall']) == 3:
                 sampled_rating = round(
-                    torch.normal(mean=torch.tensor((2.5 + 3.4) / 2), std=torch.tensor((3.4 - 2.5) / 4)).item(), 1)
+                        torch.normal(mean=torch.tensor((2.5 + 3.4) / 2), std=torch.tensor((3.4 - 2.5) / 4)).item(), 1)
             elif int(datum['overall']) == 4:
                 sampled_rating = round(
-                    torch.normal(mean=torch.tensor((3.5 + 4.4) / 2), std=torch.tensor((4.4 - 3.5) / 4)).item(), 1)
+                        torch.normal(mean=torch.tensor((3.5 + 4.4) / 2), std=torch.tensor((4.4 - 3.5) / 4)).item(), 1)
             else:
                 sampled_rating = round(
-                    torch.normal(mean=torch.tensor((4.5 + 5.0) / 2), std=torch.tensor((5.0 - 4.5) / 4)).item(), 1)
+                        torch.normal(mean=torch.tensor((4.5 + 5.0) / 2), std=torch.tensor((5.0 - 4.5) / 4)).item(), 1)
             if sampled_rating > 5.0:
                 sampled_rating = 5.0
             if sampled_rating < 1.0:
@@ -1863,7 +1866,7 @@ class P5_Yelp_Dataset(Dataset):
 def get_loader(
         args, task_list, sample_numbers, split='toys', mode='train',
         batch_size=16, workers=4, distributed=False, tokenizer=None
-        ):
+):
 
     assert tokenizer is not None, 'tokenizer should not be None'
 
