@@ -355,6 +355,12 @@ def main_worker(gpu, args):
                            'review': ['4-1', '4-2', '4-3'],
                            'traditional': ['5-1', '5-2', '5-3', '5-4', '5-5', '5-6', '5-7']
                            }
+    if args.task_index is not None:
+        print(f"Task index: {args.task_index}")
+        train_task_list = list(train_task_list.items())
+        train_task_list = dict((train_task_list[args.task_index],))
+        print(f"Train task list: {train_task_list}")
+
     # define sampling numbers for each group of personalized prompts (see pretrain_data.py)
     # if greater than 1, a data sample will be used for multiple times with different prompts in certain task family
     train_sample_numbers = {'rating': 1, 'sequential': (5, 5, 10), 'explanation': 1, 'review': 1,
@@ -403,6 +409,11 @@ def main_worker(gpu, args):
                          'review': ['4-1', '4-2', '4-3'],
                          'traditional': ['5-1', '5-2', '5-3', '5-4', '5-5', '5-6', '5-7']
                          }
+    if args.task_index is not None:
+        print(f"Task index: {args.task_index}")
+        val_task_list = list(val_task_list.items())
+        val_task_list = dict((val_task_list[args.task_index],))
+
     val_sample_numbers = {'rating': 1, 'sequential': (1, 1, 1), 'explanation': 1, 'review': 1, 'traditional': (1, 1)}
     val_loader = get_loader(
             args,
