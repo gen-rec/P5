@@ -237,7 +237,7 @@ class Trainer(TrainerBase):
 
             dist.barrier()
 
-            if epoch > 10:
+            if args.run_valid:
                 # Validation
                 valid_results = self.evaluate_epoch(epoch=epoch)
 

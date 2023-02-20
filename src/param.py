@@ -114,6 +114,9 @@ def parse_args(parse=True, **optional_kwargs):
     # Select a specific task
     parser.add_argument("--task_index", type=int, default=None)
 
+    # Do validation
+    parser.add_argument("--run_valid", action="store_true")
+
     # Parse the arguments.
     if parse:
         args = parser.parse_args()
