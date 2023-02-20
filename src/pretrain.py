@@ -237,7 +237,7 @@ class Trainer(TrainerBase):
 
             dist.barrier()
 
-            if epoch > 10:
+            if args.run_valid:
                 # Validation
                 valid_results = self.evaluate_epoch(epoch=epoch)
 
@@ -376,7 +376,8 @@ def main_worker(gpu, args):
     num_added_tokens = tokenizer.add_tokens(user_ids + item_ids, special_tokens=True)
     print(f"Added {num_added_tokens} tokens to the tokenizer", flush=True)
 
-    tokenizer.save_pretrained(args.output)
+    os.makedirs(os.path.join(args.output, f"tokenizer-{args.rank}"), exist_ok=True)
+    tokenizer.save_pretrained(os.path.join(args.output, f"tokenizer-{args.rank}"))
     ####
 
     train_loader = get_loader(
