@@ -9,8 +9,6 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.distributed import DistributedSampler
 
-from tokenization import P5Tokenizer
-
 
 def load_json(file_path):
     with open(file_path, "r") as f:

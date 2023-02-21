@@ -79,7 +79,7 @@ def parse_args(parse=True, **optional_kwargs):
     parser.add_argument('--tokenizer', type=str, default='p5')
     parser.add_argument('--whole_word_embed', action='store_true')
 
-    parser.add_argument('--max_text_length', type=int, default=128)
+    parser.add_argument('--max_text_length', type=int, default=512)
 
     # Training
     parser.add_argument('--batch_size', type=int, default=256)
@@ -107,6 +107,7 @@ def parse_args(parse=True, **optional_kwargs):
     parser.add_argument('--do_lower_case', action='store_true')
 
     # Etc.
+    parser.add_argument("--extra_token", action='store_true')
     parser.add_argument('--comment', type=str, default='')
     parser.add_argument("--dry", action='store_true')
 

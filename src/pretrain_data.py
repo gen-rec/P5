@@ -9,8 +9,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.distributed import DistributedSampler
-
-from tokenization import P5Tokenizer
+from transformers import T5TokenizerFast
 
 
 def load_json(file_path):
@@ -903,6 +902,7 @@ class P5_Amazon_Dataset(Dataset):
         else:
             raise NotImplementedError
 
+        self.tokenizer: T5TokenizerFast
         input_ids = self.tokenizer.encode(
                 source_text, padding=True, truncation=True, max_length=self.args.max_text_length)
         tokenized_text = self.tokenizer.tokenize(source_text)
@@ -1862,14 +1862,10 @@ class P5_Yelp_Dataset(Dataset):
 
 def get_loader(
         args, task_list, sample_numbers, split='toys', mode='train',
-        batch_size=16, workers=4, distributed=False
+        batch_size=16, workers=4, distributed=False, tokenizer=None
         ):
 
-    if 't5' in args.backbone:
-        tokenizer = P5Tokenizer.from_pretrained(
-                args.backbone,
-                max_length=args.max_text_length,
-                do_lower_case=args.do_lower_case)
+    assert tokenizer is not None, 'tokenizer should not be None'
 
     if split == 'yelp':
         from all_yelp_templates import all_tasks as task_templates

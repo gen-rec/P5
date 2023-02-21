@@ -1,3 +1,5 @@
+import json
+import os.path
 from pathlib import Path
 
 import torch
@@ -6,6 +8,7 @@ import torch.distributed as dist
 from packaging import version
 from torch.nn.parallel import DistributedDataParallel as DDP
 from tqdm import tqdm
+from transformers import PreTrainedTokenizerFast, T5TokenizerFast
 
 from dist_utils import reduce_dict
 from param import parse_args
@@ -17,7 +20,7 @@ _use_apex = False
 
 # Check if Pytorch version >= 1.6 to switch between Native AMP and Apex
 if version.parse(torch.__version__) < version.parse("1.6"):
-    from transormers.file_utils import is_apex_available
+    from transformers.file_utils import is_apex_available
 
     if is_apex_available():
         from apex import amp
@@ -31,13 +34,14 @@ from trainer_base import TrainerBase
 
 # The Trainer inherits TrainerBase in trainer_base.py
 class Trainer(TrainerBase):
-    def __init__(self, args, train_loader=None, val_loader=None, test_loader=None, train=True):
+    def __init__(self, args, train_loader=None, val_loader=None, test_loader=None, train=True, tokenizer=None):
         super().__init__(
                 args,
                 train_loader=train_loader,
                 val_loader=val_loader,
                 test_loader=test_loader,
-                train=train)
+                train=train
+        )
 
         assert args.whole_word_embed
         from pretrain_model import P5Pretraining
@@ -46,12 +50,11 @@ class Trainer(TrainerBase):
         model_class = P5Pretraining
 
         config = self.create_config()
-        self.tokenizer = self.create_tokenizer()
+        assert tokenizer is not None, "Tokenizer must be provided."
+        self.tokenizer: T5TokenizerFast = tokenizer
         self.model = self.create_model(model_class, config, **model_kwargs)
 
-        if 'p5' in self.args.tokenizer:
-            self.model.resize_token_embeddings(self.tokenizer.vocab_size)
-
+        self.model.resize_token_embeddings(len(self.tokenizer.vocab))
         self.model.tokenizer = self.tokenizer
 
         # Load Checkpoint
@@ -79,13 +82,12 @@ class Trainer(TrainerBase):
                 self.scaler = torch.cuda.amp.GradScaler()
             elif _use_apex:
                 self.model, self.optim = amp.initialize(
-                        self.model, self.optim, opt_level='O1', verbosity=self.verbose)
+                        self.model, self.optim, opt_level='O1', verbosity=self.verbose
+                )
 
         if args.multiGPU:
             if args.distributed:
-                self.model = DDP(self.model, device_ids=[args.gpu],
-                                 find_unused_parameters=True
-                                 )
+                self.model = DDP(self.model, device_ids=[args.gpu], find_unused_parameters=True)
         if self.verbose:
             print(f'It took {time() - start:.1f}s')
 
@@ -120,7 +122,7 @@ class Trainer(TrainerBase):
             self.model.train()
 
             if self.verbose:
-                pbar = tqdm(total=len(self.train_loader), ncols=275)
+                pbar = tqdm(total=len(self.train_loader), ncols=240)
 
             epoch_results = {}
             for loss_name in LOSSES_NAME:
@@ -288,7 +290,7 @@ class Trainer(TrainerBase):
                 loss_meter = LossMeter()
                 loss_meters = [LossMeter() for _ in range(len(LOSSES_NAME))]
 
-                pbar = tqdm(total=len(self.val_loader), ncols=275)
+                pbar = tqdm(total=len(self.val_loader), ncols=240)
 
             for step_i, batch in enumerate(self.val_loader):
 
@@ -357,6 +359,12 @@ def main_worker(gpu, args):
     # if greater than 1, a data sample will be used for multiple times with different prompts in certain task family
     train_sample_numbers = {'rating': 1, 'sequential': (5, 5, 10), 'explanation': 1, 'review': 1,
                             'traditional': (10, 5)}
+
+    ####
+    tokenizer: PreTrainedTokenizerFast = T5TokenizerFast.from_pretrained("t5-small", model_max_length=512)
+    print("Extra token not used")
+    ####
+
     train_loader = get_loader(
             args,
             train_task_list,
@@ -365,7 +373,8 @@ def main_worker(gpu, args):
             mode='train',
             batch_size=args.batch_size,
             workers=args.num_workers,
-            distributed=args.distributed
+            distributed=args.distributed,
+            tokenizer=tokenizer
     )
 
     print(f'Building val loader at GPU {gpu}')
@@ -395,10 +404,13 @@ def main_worker(gpu, args):
             mode='val',
             batch_size=args.batch_size,
             workers=args.num_workers,
-            distributed=args.distributed
+            distributed=args.distributed,
+            tokenizer=tokenizer
     )
 
-    trainer = Trainer(args, train_loader, val_loader, train=True)
+    args.verbose = True
+
+    trainer = Trainer(args, train_loader, val_loader, train=True, tokenizer=tokenizer)
     trainer.train()
 
 
