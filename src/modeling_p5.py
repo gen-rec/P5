@@ -35,10 +35,11 @@ class JointEncoder(T5Stack):
         self.whole_word_embeddings = nn.Embedding(
                 512, config.d_model  ## config.d_model is 768 for base
         )
+        self.init_weights()
         ####
+        self.whole_word_embeddings.weight.requires_grad = False
         torch.nn.init.zeros_(self.whole_word_embeddings.weight)
         ####
-        self.init_weights()
         self.model_parallel = False
         self.device_map = None
 
