@@ -4,20 +4,21 @@ export OMP_NUM_THREADS=8
 
 # Run with $ bash scripts/pretrain_P5_small_beauty.sh 4
 dataset=$1
-seeds="2022 42 1398"
+seeds="1398 42 2022"
+num_nodes=$2
 task_indices=(0 1 2 3 4)
 losses=('rating' 'sequential' 'explanation' 'review' 'traditional')
-num_nodes=$2
 
 for seed in $seeds; do
   for task_index in "${task_indices[@]}"; do
     task_display_name=$((task_index + 1))
-    name="${dataset}-small-${seed}-task-${task_display_name}"
-    output="snap/task-${task_display_name}/${name}"
+    # name="${dataset}-small-${seed}-task-${task_display_name}"
+    name="task-${task_display_name}"
+    output="snap/${dataset}-small-${seed}/${name}"
 
     mkdir -p "$output"
 
-    echo "Name: $name"
+    echo "Name: $output"
 
     PYTHONPATH=$PYTHONPATH:./src python -m torch.distributed.launch \
       --nproc_per_node="$num_nodes" \

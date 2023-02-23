@@ -4,12 +4,14 @@ export OMP_NUM_THREADS=8
 
 # Run with $ bash scripts/pretrain_P5_small_beauty.sh 4
 dataset=$1
-seeds="2022 42 1398"
+seeds="1398 42 2022"
 num_nodes=$2
 
 for seed in $seeds; do
   name=$dataset-small-$seed
-  output=snap/$name
+  output=snap/$name/all
+
+  mkdir -p "$output"
 
   PYTHONPATH=$PYTHONPATH:./src \
     python -m torch.distributed.launch \
