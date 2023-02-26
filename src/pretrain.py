@@ -54,7 +54,21 @@ class Trainer(TrainerBase):
         self.tokenizer: T5TokenizerFast = tokenizer
         self.model = self.create_model(model_class, config, **model_kwargs)
 
-        self.model.resize_token_embeddings(len(self.tokenizer.vocab))
+        ####
+        # Initialize new token embeddings
+        prev_vocab_size = self.model.config.vocab_size
+        print(f"** {prev_vocab_size} tokens in original tokenizer **")
+
+        new_token_embedding = self.model.resize_token_embeddings(len(self.tokenizer.vocab))
+
+        torch.nn.init.xavier_normal_(new_token_embedding.weight[prev_vocab_size:],
+                                     gain=torch.nn.init.calculate_gain("linear"))
+        print(
+                f"** {len(self.tokenizer.vocab) - prev_vocab_size} new tokens initialized "
+                f"({new_token_embedding.weight[prev_vocab_size:].shape})**"
+        )
+        ####
+
         self.model.tokenizer = self.tokenizer
 
         # Load Checkpoint

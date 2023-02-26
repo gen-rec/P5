@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import torch
 import torch.nn as nn
 from torch.nn import CrossEntropyLoss
+from transformers import T5Config
 from transformers.modeling_outputs import (BaseModelOutput, BaseModelOutputWithPastAndCrossAttentions, ModelOutput)
 from transformers.models.t5.modeling_t5 import (T5Block, T5ForConditionalGeneration, T5LayerNorm, T5Stack)
 from transformers.utils import logging
@@ -178,6 +179,7 @@ class P5(T5ForConditionalGeneration):
     ]
 
     def __init__(self, config):
+        config: T5Config
         super(T5ForConditionalGeneration, self).__init__(config)
 
         self.config = config
