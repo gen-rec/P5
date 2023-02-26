@@ -14,7 +14,7 @@ for seed in $seeds; do
     task_display_name=$((task_index + 1))
     # name="${dataset}-small-${seed}-task-${task_display_name}"
     name="task-${task_display_name}"
-    output="snap/${dataset}-small-${seed}/${name}"
+    output="snap/atomic/${dataset}-small-${seed}/${name}"
 
     mkdir -p "$output"
 
