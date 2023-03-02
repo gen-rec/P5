@@ -209,7 +209,8 @@ class P5Evaluator():
 
         for task_num, task in enumerate(self.test_task_list['sequential']):
             print(f"{task}: {task_num + 1:>2d}/{len(self.test_task_list['sequential'])}")
-            test_loader = self.create_loader(task_name='sequential', task_type=[task])
+            test_loader = self.create_loader(task_name='sequential', task_type=[task],
+                                             reduce_batch_size=task not in ['2-11', '2-12'])
 
             # binary output
             if task in ['2-11', '2-12']:
@@ -366,13 +367,18 @@ class P5Evaluator():
     Helper functions
     '''
 
-    def create_loader(self, task_name: str, task_type: list):
+    def create_loader(self, task_name: str, task_type: list, reduce_batch_size: bool = False):
         '''
         Create test loader for a specific task
         task_name: str, name of the task (e.g. review, traditional)
         task_type: list, list of task types (e.g. ['4-1', '4-2'])
+        reduce_batch_size: bool, whether to reduce batch size to 1/4th of the original batch size
         '''
         assert task_name in self.test_task_list.keys(), f"Task name {task_name} not found in test task list"
+
+        batch_size = self.args.batch_size
+        if reduce_batch_size:
+            batch_size = int(batch_size / 16)
 
         return get_loader(
                 args=self.args,
@@ -380,8 +386,8 @@ class P5Evaluator():
                 sample_numbers=self.sample_numbers,
                 split=self.data_type,
                 mode='test',
-                batch_size=self.args.batch_size,
-                workers=0,
+                batch_size=batch_size,
+                workers=4,
                 distributed=False,
                 tokenizer=self.tokenizer,
         )
