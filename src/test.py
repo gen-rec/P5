@@ -73,7 +73,7 @@ class P5Evaluator():
         project_dir = Path(__file__).resolve().parent.parent
         _, self.model_type, model_info, self.task_type = args.load.split('/')  # snap/naive/beauty-small-42/task-1
         self.data_type, _, self.seed = model_info.split('-')
-        self.output_dir = os.path.join(project_dir, 'output', self.model_type, model_info, self.task_type)
+        self.output_dir = os.path.join(project_dir, args.output_path, self.model_type, model_info, self.task_type)
         os.makedirs(self.output_dir, exist_ok=True)
 
         ## Load pretrained model and tokenizer
