@@ -376,7 +376,7 @@ class P5Evaluator():
     Helper functions
     '''
 
-    def create_loader(self, task_name: str, prompt_list: list):
+    def create_loader(self, task_name: str, prompt_list: list, reduce_batch_size: bool = False):
         '''
         Create test loader for a specific task
         task_name: str, name of the task (e.g. review, traditional)
