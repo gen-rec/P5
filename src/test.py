@@ -109,7 +109,7 @@ class P5Evaluator():
         print(f"number of items {len(data_maps['item2id'])}")
 
         if self.data_type == 'yelp':
-            self.test_task_list = {'rating': ['1-1', '1-2', '1-3', '1-4', '1-5', '1-6', '1-7', '1-8', '1-9'],
+            self.prompt_list = {'rating': ['1-1', '1-2', '1-3', '1-4', '1-5', '1-6', '1-7', '1-8', '1-9'],
                                    'sequential': ['2-1', '2-2', '2-3', '2-4', '2-5', '2-6', '2-7', '2-8', '2-9', '2-10',
                                                   '2-11', '2-12'],
                                    'explanation': ['3-1', '3-2', '3-3', '3-4', '3-5', '3-6', '3-7', '3-8', '3-9'],
@@ -118,19 +118,19 @@ class P5Evaluator():
                                    }
         else:
 
-            # self.test_task_list = {'rating': ['1-1'],
-            #                 'sequential': ['2-1'],
-            #                 'explanation': ['3-1'],
-            #                 'review': ['4-2',],
-            #                 'traditional': ['5-1']}
+            self.prompt_list = {'rating': ['1-1'],
+                            'sequential': ['2-1'],
+                            'explanation': ['3-1'],
+                            'review': ['4-2',],
+                            'traditional': ['5-1']}
 
-            self.test_task_list = {'rating': ['1-1', '1-2', '1-3', '1-4', '1-5', '1-6', '1-7', '1-8', '1-9', '1-10'],
-                                   'sequential': ['2-1', '2-2', '2-3', '2-4', '2-5', '2-6', '2-7', '2-8', '2-9', '2-10',
-                                                  '2-11', '2-12', '2-13'],
-                                   'explanation': ['3-1', '3-2', '3-3', '3-4', '3-5', '3-6', '3-7', '3-8', '3-9',
-                                                   '3-10', '3-11', '3-12'],
-                                   'review': ['4-1', '4-2', '4-3', '4-4'],
-                                   'traditional': ['5-1', '5-2', '5-3', '5-4', '5-5', '5-6', '5-7', '5-8']}
+            # self.prompt_list = {'rating': ['1-1', '1-2', '1-3', '1-4', '1-5', '1-6', '1-7', '1-8', '1-9', '1-10'],
+            #                        'sequential': ['2-1', '2-2', '2-3', '2-4', '2-5', '2-6', '2-7', '2-8', '2-9', '2-10',
+            #                                       '2-11', '2-12', '2-13'],
+            #                        'explanation': ['3-1', '3-2', '3-3', '3-4', '3-5', '3-6', '3-7', '3-8', '3-9',
+            #                                        '3-10', '3-11', '3-12'],
+            #                        'review': ['4-1', '4-2', '4-3', '4-4'],
+            #                        'traditional': ['5-1', '5-2', '5-3', '5-4', '5-5', '5-6', '5-7', '5-8']}
 
         self.sample_numbers = {'rating': 1, 'sequential': (1, 1, 1), 'explanation': 1, 'review': 1,
                                'traditional': (1, 1)}
@@ -159,21 +159,23 @@ class P5Evaluator():
     def evaluate_task1(self):
 
         task_type = 'task-1'
+        task_name = 'rating'
+
         print("\nTesting Task 1: Rating Prediction")
         os.makedirs(os.path.join(self.output_dir, task_type), exist_ok=True)
         with open(os.path.join(self.output_dir, task_type, 'metrics.tsv'), 'a') as f:
             f.write(f"task\tRMSE\tMAE\n")
 
-        for task_num, task in enumerate(self.test_task_list['rating']):
-            print(f"{task}: {task_num + 1:>2d}/{len(self.test_task_list['rating'])}")
+        for prompt_num, prompt in enumerate(self.prompt_list[task_name]):
+            print(f"{prompt}: {prompt_num + 1:>2d}/{len(self.prompt_list[task_name])}")
 
             # generate
-            test_loader = self.create_loader(task_name='rating', task_type=[task])
-            source_text, gt, pred = self.generate_single(test_loader=test_loader)
-            self.save_results(source_text=source_text, gt=gt, pred=pred, task=task, task_type=task_type)
+            test_loader = self.create_loader(task_name=task_name, prompt_list=[prompt])
+            source_text, gt, pred = self.generate_single(data_loader=test_loader)
+            self.save_results(source_text=source_text, gt=gt, pred=pred, task_type=task_type, prompt=prompt)
 
             # binary output
-            if task in ['1-3', '1-4', '1-8', '1-9']:
+            if prompt in ['1-3', '1-4', '1-8', '1-9']:
                 continue
             # rating output
             else:
@@ -195,7 +197,7 @@ class P5Evaluator():
                     RMSE, MAE = -1, -1
 
                 with open(os.path.join(self.output_dir, task_type, 'metrics.tsv'), 'a') as f:
-                    f.write(f"{task}\t{RMSE:.4f}\t{MAE:.4f}\n")
+                    f.write(f"{prompt}\t{RMSE:.4f}\t{MAE:.4f}\n")
 
         return 1
 
@@ -203,26 +205,27 @@ class P5Evaluator():
     def evaluate_task2(self):
 
         task_type = 'task-2'
+        task_name = 'sequential'
+
         print("\nTesting Task 2: Sequential Recommendation..")
         os.makedirs(os.path.join(self.output_dir, task_type), exist_ok=True)
         with open(os.path.join(self.output_dir, task_type, 'metrics.tsv'), 'a') as f:
             f.write(f"task\thit@5\tndcg@5\thit@10\tndcg@10\n")
 
-        for task_num, task in enumerate(self.test_task_list['sequential']):
-            print(f"{task}: {task_num + 1:>2d}/{len(self.test_task_list['sequential'])}")
-            test_loader = self.create_loader(task_name='sequential', task_type=[task],
-                                             reduce_batch_size=task not in ['2-11', '2-12'])
+        for prompt_num, prompt in enumerate(self.prompt_list[task_name]):
+            print(f"{prompt}: {prompt_num + 1:>2d}/{len(self.prompt_list[task_name])}")
+            test_loader = self.create_loader(task_name=task_name, prompt_list=[prompt], reduce_batch_size=task not in ['2-11', '2-12'])
 
             # binary output
-            if task in ['2-11', '2-12']:
+            if prompt in ['2-11', '2-12']:
                 # generate
-                source_text, gt, pred = self.generate_single(test_loader=test_loader)
-                self.save_results(source_text=source_text, gt=gt, pred=pred, task=task, task_type=task_type)
+                source_text, gt, pred = self.generate_single(data_loader=test_loader)
+                self.save_results(source_text=source_text, gt=gt, pred=pred, task_type=task_type, prompt=prompt)
 
             # item output
             else:
-                source_text, gt, pred = self.generate_multi_beam(test_loader=test_loader)
-                self.save_results(source_text=source_text, gt=gt, pred=pred, task=task, task_type=task_type)
+                source_text, gt, pred = self.generate_multi_beam(data_loader=test_loader)
+                self.save_results(source_text=source_text, gt=gt, pred=pred, task_type=task_type, prompt=prompt)
 
                 # evaluate
                 ui_scores = {}
@@ -236,7 +239,7 @@ class P5Evaluator():
                 metric10 = evaluate_all(ui_scores, gt, 10)[1]
 
                 with open(os.path.join(self.output_dir, task_type, 'metrics.tsv'), 'a') as f:
-                    f.write(f"{task}\t{metric5['hit']}\t{metric10['hit']}\t{metric5['ndcg']}\t{metric10['ndcg']}\n")
+                    f.write(f"{prompt}\t{metric5['hit']}\t{metric10['hit']}\t{metric5['ndcg']}\t{metric10['ndcg']}\n")
 
         return 1
 
@@ -244,19 +247,21 @@ class P5Evaluator():
     def evaluate_task3(self):
 
         task_type = 'task-3'
+        task_name = 'explanation'
+
         print("\nTesting Task 3: Explanation Generation")
         os.makedirs(os.path.join(self.output_dir, task_type), exist_ok=True)
         with open(os.path.join(self.output_dir, task_type, 'metrics.tsv'), 'a') as f:
             f.write(f"task\tBLEU4\trouge-1\trouge-2\trouge-l\n")
 
-        for task_num, task in enumerate(self.test_task_list['explanation']):
-            os.makedirs(os.path.join(self.output_dir, task_type, task), exist_ok=True)
-            print(f"{task}: {task_num + 1:>2d}/{len(self.test_task_list['explanation'])}")
+        for prompt_num, prompt in enumerate(self.prompt_list[task_name]):
+            os.makedirs(os.path.join(self.output_dir, task_type, prompt), exist_ok=True)
+            print(f"{prompt}: {prompt_num + 1:>2d}/{len(self.prompt_list[task_name])}")
 
             # generate
-            test_loader = self.create_loader(task_name='explanation', task_type=[task])
-            source_text, gt, pred = self.generate_single_beam(test_loader=test_loader)
-            self.save_results(source_text=source_text, gt=gt, pred=pred, task=task, task_type=task_type)
+            test_loader = self.create_loader(task_name=task_name, prompt_list=[prompt])
+            source_text, gt, pred = self.generate_single_beam(data_loader=test_loader)
+            self.save_results(source_text=source_text, gt=gt, pred=pred, task_type=task_type, prompt=prompt)
 
             # evaluate
             new_tokens_predict = [l.split() for l in pred]
@@ -266,7 +271,7 @@ class P5Evaluator():
 
             with open(os.path.join(self.output_dir, task_type, 'metrics.tsv'), 'a') as f:
                 f.write(
-                        f"{task}\t{BLEU4:.4f}\t{ROUGE['rouge_1/f_score']:.4f}\t{ROUGE['rouge_2/f_score']:.4f}\t{ROUGE['rouge_l/f_score']:.4f}\n")
+                        f"{prompt}\t{BLEU4:.4f}\t{ROUGE['rouge_1/f_score']:.4f}\t{ROUGE['rouge_2/f_score']:.4f}\t{ROUGE['rouge_l/f_score']:.4f}\n")
 
         return 1
 
@@ -274,19 +279,21 @@ class P5Evaluator():
     def evaluate_task4(self):
 
         task_type = 'task-4'
+        task_name = 'review'
+
         print("\nTesting Task 4: Review Related")
         os.makedirs(os.path.join(self.output_dir, task_type), exist_ok=True)
         with open(os.path.join(self.output_dir, task_type, 'metrics.tsv'), 'a') as f:
             f.write(f"task\tBLEU2\trouge-1\trouge-2\trouge-l\n")
 
-        for task_num, task in enumerate(self.test_task_list['review']):
-            os.makedirs(os.path.join(self.output_dir, task_type, task), exist_ok=True)
-            print(f"{task}: {task_num + 1:>2d}/{len(self.test_task_list['review'])}")
+        for prompt_num, prompt in enumerate(self.prompt_list[task_name]):
+            os.makedirs(os.path.join(self.output_dir, task_type, prompt), exist_ok=True)
+            print(f"{prompt}: {prompt_num + 1:>2d}/{len(self.prompt_list[task_name])}")
 
             # generate
-            test_loader = self.create_loader(task_name='review', task_type=[task])
-            source_text, gt, pred = self.generate_single(test_loader=test_loader)
-            self.save_results(source_text=source_text, gt=gt, pred=pred, task=task, task_type=task_type)
+            test_loader = self.create_loader(task_name='review', prompt_list=[prompt])
+            source_text, gt, pred = self.generate_single(data_loader=test_loader)
+            self.save_results(source_text=source_text, gt=gt, pred=pred, task_type=task_type, prompt=prompt)
 
             # evaluate
             # rating output
@@ -298,7 +305,6 @@ class P5Evaluator():
                         predicted_rating.append((float(r), float(p)))
                     except ValueError:
                         invalid_count += 1
-
                 print(f"Invalid count: {invalid_count}")
 
                 if predicted_rating:
@@ -308,10 +314,10 @@ class P5Evaluator():
                     RMSE, MAE = -1, -1
 
                 with open(os.path.join(self.output_dir, task_type, 'metrics.tsv'), 'a') as f:
-                    f.write(f"{task}\t{RMSE:.4f}\t{MAE:.4f}\n")
+                    f.write(f"{prompt}\t{RMSE:.4f}\t{MAE:.4f}\n")
 
             # summary output
-            elif task in ['4-1', '4-3']:
+            elif prompt in ['4-1', '4-3']:
                 new_tokens_predict = [l.split() for l in pred]
                 new_tokens_test = [ll.split() for ll in gt]
                 BLEU2 = bleu_score(new_tokens_test, new_tokens_predict, n_gram=2, smooth=False)
@@ -319,7 +325,7 @@ class P5Evaluator():
 
                 with open(os.path.join(self.output_dir, task_type, 'metrics.tsv'), 'a') as f:
                     f.write(
-                            f"{task}\t{BLEU2:.4f}\t{ROUGE['rouge_1/f_score']:.4f}\t{ROUGE['rouge_2/f_score']:.4f}\t{ROUGE['rouge_l/f_score']:.4f}\n")
+                            f"{prompt}\t{BLEU2:.4f}\t{ROUGE['rouge_1/f_score']:.4f}\t{ROUGE['rouge_2/f_score']:.4f}\t{ROUGE['rouge_l/f_score']:.4f}\n")
 
         return 1
 
@@ -327,26 +333,28 @@ class P5Evaluator():
     def evaluate_task5(self):
 
         task_type = 'task-5'
+        task_name = 'traditional'
+
         print("\nTesting Task 5: Direct Recommendation..")
         os.makedirs(os.path.join(self.output_dir, task_type), exist_ok=True)
         with open(os.path.join(self.output_dir, task_type, 'metrics.tsv'), 'a') as f:
             f.write(f"task\thit@5\thit@5\tndcg@5\thit@10\tndcg@10\n")
 
-        for task_num, task in enumerate(self.test_task_list['traditional']):
-            os.makedirs(os.path.join(self.output_dir, task_type, task), exist_ok=True)
-            print(f"{task}: {task_num + 1:>2d}/{len(self.test_task_list['traditional'])}")
+        for prompt_num, prompt in enumerate(self.prompt_list[task_name]):
+            os.makedirs(os.path.join(self.output_dir, task_type, prompt), exist_ok=True)
+            print(f"{prompt}: {prompt_num + 1:>2d}/{len(self.prompt_list[task_name])}")
 
             # generate
-            test_loader = self.create_loader(task_name='traditional', task_type=[task])
-            if task in ['5-1', '5-2', '5-3', '5-4']:  # binary output
-                source_text, gt, pred = self.generate_single(test_loader=test_loader)
-                self.save_results(source_text=source_text, gt=gt, pred=pred, task=task, task_type=task_type)
-            elif task in ['5-5', '5-6', '5-7', '5-8']:  # item output
+            test_loader = self.create_loader(task_name=task_name, prompt_list=[prompt])
+            if prompt in ['5-1', '5-2', '5-3', '5-4']:  # binary output
+                source_text, gt, pred = self.generate_single(data_loader=test_loader)
+                self.save_results(source_text=source_text, gt=gt, pred=pred, task_type=task_type, prompt=prompt)
+            elif prompt in ['5-5', '5-6', '5-7', '5-8']:  # item output
                 source_text, gt, pred = self.generate_topk(test_loader=test_loader)
-                self.save_results(source_text=source_text, gt=gt, pred=pred, task=task, task_type=task_type)
+                self.save_results(source_text=source_text, gt=gt, pred=pred, task_type=task_type, prompt=prompt)
 
                 # evaluate
-                if task in ['5-5', '5-6', '5-7', '5-8']:
+                if prompt in ['5-5', '5-6', '5-7', '5-8']:
                     ui_scores = {}
                     for i, pred in enumerate(pred):
                         pred_dict = {}
@@ -360,7 +368,7 @@ class P5Evaluator():
 
                     with open(os.path.join(self.output_dir, task_type, 'metrics.tsv'), 'a') as f:
                         f.write(
-                                f"{task}\t{metric1['hit']}\t{metric5['hit']}\t{metric10['hit']}\t{metric5['ndcg']}\t{metric10['ndcg']}\n")
+                                f"{prompt}\t{metric1['hit']}\t{metric5['hit']}\t{metric10['hit']}\t{metric5['ndcg']}\t{metric10['ndcg']}\n")
 
         return 1
 
@@ -368,14 +376,14 @@ class P5Evaluator():
     Helper functions
     '''
 
-    def create_loader(self, task_name: str, task_type: list, reduce_batch_size: bool = False):
+    def create_loader(self, task_name: str, prompt_list: list):
         '''
         Create test loader for a specific task
         task_name: str, name of the task (e.g. review, traditional)
-        task_type: list, list of task types (e.g. ['4-1', '4-2'])
+        prompt_list: list, list of task types (e.g. ['4-1', '4-2'])
         reduce_batch_size: bool, whether to reduce batch size to 1/4th of the original batch size
         '''
-        assert task_name in self.test_task_list.keys(), f"Task name {task_name} not found in test task list"
+        assert task_name in self.prompt_list.keys(), f"Task name {task_name} not found in test task list"
 
         batch_size = self.args.batch_size
         if reduce_batch_size:
@@ -383,7 +391,7 @@ class P5Evaluator():
 
         return get_loader(
                 args=self.args,
-                task_list={task_name: task_type},
+                task_list={task_name: prompt_list},
                 sample_numbers=self.sample_numbers,
                 split=self.data_type,
                 mode='test',
@@ -393,12 +401,12 @@ class P5Evaluator():
                 tokenizer=self.tokenizer,
         )
 
-    def generate_single(self, test_loader):
+    def generate_single(self, data_loader):
         '''
         Generate single output with greedy search
         '''
         source_text, gt, pred = [], [], []
-        for i, batch in enumerate(test_loader):
+        for i, batch in enumerate(data_loader):
             with torch.no_grad():
                 results = self.model.generate(
                         batch['input_ids'].to(self.device),
@@ -409,12 +417,12 @@ class P5Evaluator():
                 pred.extend(generated)
         return source_text, gt, pred
 
-    def generate_single_beam(self, test_loader):
+    def generate_single_beam(self, data_loader):
         '''
         Generate single output with beam search
         '''
         source_text, gt, pred = [], [], []
-        for i, batch in enumerate(test_loader):
+        for i, batch in enumerate(data_loader):
             with torch.no_grad():
                 results = self.model.generate(
                         batch['input_ids'].to(self.device),
@@ -430,12 +438,12 @@ class P5Evaluator():
                 pred.extend(generated)
         return source_text, gt, pred
 
-    def generate_multi_beam(self, test_loader):
+    def generate_multi_beam(self, data_loader):
         '''
         Generate multiple outputs with beam search
         '''
         source_text, gt, pred = [], [], []
-        for i, batch in enumerate(test_loader):
+        for i, batch in enumerate(data_loader):
             with torch.no_grad():
                 results = self.model.generate(
                         batch['input_ids'].to(self.device),
@@ -452,14 +460,14 @@ class P5Evaluator():
                     pred.append(generated[j:j + self.args.num_beams])
         return source_text, gt, pred
 
-    def save_results(self, source_text, gt, pred, task, task_type):
+    def save_results(self, source_text, gt, pred, task_type, prompt):
         '''
         Save results to json file
         source_text: list, list of source text
         gt: list, list of ground truth
         pred: list, list of predictions
-        task: str, name of the task (e.g. task-1, task-2)
-        task_type: str, name of the task type (e.g. 1-1, 1-2)
+        task_type: str, name of the task (e.g. task-1, task-2)
+        prompt: str, name of the task type (e.g. 1-1, 1-2)
         '''
         total = []
         for s, g, p in zip(source_text, gt, pred):
@@ -468,8 +476,9 @@ class P5Evaluator():
                 'gt': g,
                 'pred': p
             })
-        os.makedirs(os.path.join(self.output_dir, task_type, task), exist_ok=True)
-        json.dump(total, open(os.path.join(self.output_dir, task_type, task, 'results.json'), 'w'), indent=4)
+        save_path = os.path.join(self.output_dir, task_type, prompt)
+        os.makedirs(save_path, exist_ok=True)
+        json.dump(total, open(os.path.join(save_path, 'results.json'), 'w'), indent=4)
 
     @staticmethod
     def create_tokenizer(tokenizer_path: Optional[str], args):
