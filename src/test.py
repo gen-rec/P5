@@ -110,27 +110,20 @@ class P5Evaluator():
 
         if self.data_type == 'yelp':
             self.prompt_list = {'rating': ['1-1', '1-2', '1-3', '1-4', '1-5', '1-6', '1-7', '1-8', '1-9'],
-                                   'sequential': ['2-1', '2-2', '2-3', '2-4', '2-5', '2-6', '2-7', '2-8', '2-9', '2-10',
-                                                  '2-11', '2-12'],
-                                   'explanation': ['3-1', '3-2', '3-3', '3-4', '3-5', '3-6', '3-7', '3-8', '3-9'],
-                                   'review': ['4-1', '4-2'],
-                                   'traditional': ['5-1', '5-2', '5-3', '5-4', '5-5', '5-6', '5-7']
-                                   }
+                                'sequential': ['2-1', '2-2', '2-3', '2-4', '2-5', '2-6', '2-7', '2-8', '2-9', '2-10',
+                                               '2-11', '2-12'],
+                                'explanation': ['3-1', '3-2', '3-3', '3-4', '3-5', '3-6', '3-7', '3-8', '3-9'],
+                                'review': ['4-1', '4-2'],
+                                'traditional': ['5-1', '5-2', '5-3', '5-4', '5-5', '5-6', '5-7']
+                                }
         else:
-
-            self.prompt_list = {'rating': ['1-1'],
-                            'sequential': ['2-1'],
-                            'explanation': ['3-1'],
-                            'review': ['4-2',],
-                            'traditional': ['5-1']}
-
-            # self.prompt_list = {'rating': ['1-1', '1-2', '1-3', '1-4', '1-5', '1-6', '1-7', '1-8', '1-9', '1-10'],
-            #                        'sequential': ['2-1', '2-2', '2-3', '2-4', '2-5', '2-6', '2-7', '2-8', '2-9', '2-10',
-            #                                       '2-11', '2-12', '2-13'],
-            #                        'explanation': ['3-1', '3-2', '3-3', '3-4', '3-5', '3-6', '3-7', '3-8', '3-9',
-            #                                        '3-10', '3-11', '3-12'],
-            #                        'review': ['4-1', '4-2', '4-3', '4-4'],
-            #                        'traditional': ['5-1', '5-2', '5-3', '5-4', '5-5', '5-6', '5-7', '5-8']}
+            self.prompt_list = {'rating': ['1-1', '1-2', '1-3', '1-4', '1-5', '1-6', '1-7', '1-8', '1-9', '1-10'],
+                                'sequential': ['2-1', '2-2', '2-3', '2-4', '2-5', '2-6', '2-7', '2-8', '2-9', '2-10',
+                                               '2-11', '2-12', '2-13'],
+                                'explanation': ['3-1', '3-2', '3-3', '3-4', '3-5', '3-6', '3-7', '3-8', '3-9',
+                                                '3-10', '3-11', '3-12'],
+                                'review': ['4-1', '4-2', '4-3', '4-4'],
+                                'traditional': ['5-1', '5-2', '5-3', '5-4', '5-5', '5-6', '5-7', '5-8']}
 
         self.sample_numbers = {'rating': 1, 'sequential': (1, 1, 1), 'explanation': 1, 'review': 1,
                                'traditional': (1, 1)}
@@ -147,11 +140,16 @@ class P5Evaluator():
         elif self.task_type == 'task-5':
             self.evaluate_task5()
         elif self.task_type == 'all':
-            self.evaluate_task1()
-            self.evaluate_task2()
-            self.evaluate_task3()
-            self.evaluate_task4()
-            self.evaluate_task5()
+            if "1" not in args.skip_task:
+                self.evaluate_task1()
+            if "2" not in args.skip_task:
+                self.evaluate_task2()
+            if "3" not in args.skip_task:
+                self.evaluate_task3()
+            if "4" not in args.skip_task:
+                self.evaluate_task4()
+            if "5" not in args.skip_task:
+                self.evaluate_task5()
 
         return 1
 
@@ -214,7 +212,8 @@ class P5Evaluator():
 
         for prompt_num, prompt in enumerate(self.prompt_list[task_name]):
             print(f"{prompt}: {prompt_num + 1:>2d}/{len(self.prompt_list[task_name])}")
-            test_loader = self.create_loader(task_name=task_name, prompt_list=[prompt], reduce_batch_size=task not in ['2-11', '2-12'])
+            test_loader = self.create_loader(task_name=task_name, prompt_list=[prompt],
+                                             reduce_batch_size=32 if prompt not in ['2-11', '2-12'] else 1)
 
             # binary output
             if prompt in ['2-11', '2-12']:
@@ -260,7 +259,7 @@ class P5Evaluator():
 
             # generate
             test_loader = self.create_loader(task_name=task_name, prompt_list=[prompt])
-            source_text, gt, pred = self.generate_single_beam(data_loader=test_loader)
+            source_text, gt, pred = self.generate_single(data_loader=test_loader)
             self.save_results(source_text=source_text, gt=gt, pred=pred, task_type=task_type, prompt=prompt)
 
             # evaluate
@@ -291,13 +290,13 @@ class P5Evaluator():
             print(f"{prompt}: {prompt_num + 1:>2d}/{len(self.prompt_list[task_name])}")
 
             # generate
-            test_loader = self.create_loader(task_name='review', prompt_list=[prompt])
+            test_loader = self.create_loader(task_name=task_name, prompt_list=[prompt], )
             source_text, gt, pred = self.generate_single(data_loader=test_loader)
             self.save_results(source_text=source_text, gt=gt, pred=pred, task_type=task_type, prompt=prompt)
 
             # evaluate
             # rating output
-            if task in ['4-2', '4-4']:
+            if prompt in ['4-2', '4-4']:
                 predicted_rating = []
                 invalid_count = 0
                 for r, p in zip(gt, pred):
@@ -345,12 +344,13 @@ class P5Evaluator():
             print(f"{prompt}: {prompt_num + 1:>2d}/{len(self.prompt_list[task_name])}")
 
             # generate
-            test_loader = self.create_loader(task_name=task_name, prompt_list=[prompt])
+            test_loader = self.create_loader(task_name=task_name, prompt_list=[prompt],
+                                             reduce_batch_size=32 if prompt in ['5-5', '5-6', '5-7', '5-8'] else 1)
             if prompt in ['5-1', '5-2', '5-3', '5-4']:  # binary output
                 source_text, gt, pred = self.generate_single(data_loader=test_loader)
                 self.save_results(source_text=source_text, gt=gt, pred=pred, task_type=task_type, prompt=prompt)
             elif prompt in ['5-5', '5-6', '5-7', '5-8']:  # item output
-                source_text, gt, pred = self.generate_topk(test_loader=test_loader)
+                source_text, gt, pred = self.generate_multi_beam(data_loader=test_loader)
                 self.save_results(source_text=source_text, gt=gt, pred=pred, task_type=task_type, prompt=prompt)
 
                 # evaluate
@@ -376,18 +376,17 @@ class P5Evaluator():
     Helper functions
     '''
 
-    def create_loader(self, task_name: str, prompt_list: list, reduce_batch_size: bool = False):
+    def create_loader(self, task_name: str, prompt_list: list, reduce_batch_size: int = 1):
         '''
         Create test loader for a specific task
         task_name: str, name of the task (e.g. review, traditional)
         prompt_list: list, list of task types (e.g. ['4-1', '4-2'])
-        reduce_batch_size: bool, whether to reduce batch size to 1/4th of the original batch size
+        reduce_batch_size: int, reduce batch size by a given fraction
         '''
         assert task_name in self.prompt_list.keys(), f"Task name {task_name} not found in test task list"
 
         batch_size = self.args.batch_size
-        if reduce_batch_size:
-            batch_size = int(batch_size / 16)
+        batch_size = int(batch_size / reduce_batch_size)
 
         return get_loader(
                 args=self.args,
@@ -410,27 +409,6 @@ class P5Evaluator():
             with torch.no_grad():
                 results = self.model.generate(
                         batch['input_ids'].to(self.device),
-                )
-                generated = self.tokenizer.batch_decode(results, skip_special_tokens=True)
-                source_text.extend(batch['source_text'])
-                gt.extend(batch['target_text'])
-                pred.extend(generated)
-        return source_text, gt, pred
-
-    def generate_single_beam(self, data_loader):
-        '''
-        Generate single output with beam search
-        '''
-        source_text, gt, pred = [], [], []
-        for i, batch in enumerate(data_loader):
-            with torch.no_grad():
-                results = self.model.generate(
-                        batch['input_ids'].to(self.device),
-                        min_length=9,
-                        num_beams=12,
-                        num_return_sequences=1,
-                        num_beam_groups=3,
-                        repetition_penalty=0.7
                 )
                 generated = self.tokenizer.batch_decode(results, skip_special_tokens=True)
                 source_text.extend(batch['source_text'])

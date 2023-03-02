@@ -118,6 +118,7 @@ def parse_args(parse=True, **optional_kwargs):
     parser.add_argument("--run_valid", action="store_true")
 
     parser.add_argument("--use_epoch_10", action="store_true")
+    parser.add_argument("--skip_task", type=str, default="")
 
     # Parse the arguments.
     if parse:
