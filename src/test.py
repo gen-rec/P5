@@ -179,8 +179,16 @@ class P5Evaluator():
             # rating output
             else:
                 # evaluate
-                predicted_rating = [(float(r), float(p)) for (r, p) in zip(gt, pred) if
-                                    p in [str(i / 10.0) for i in list(range(10, 50))]]
+                predicted_rating = []
+                invalid_count = 0
+                for r, p in zip(gt, pred):
+                    try:
+                        predicted_rating.append((float(r), float(p)))
+                    except ValueError:
+                        invalid_count += 1
+
+                print(f"Invalid count: {invalid_count}")
+
                 if predicted_rating:
                     RMSE = root_mean_square_error(predicted_rating, 5.0, 1.0)
                     MAE = mean_absolute_error(predicted_rating, 5.0, 1.0)
@@ -205,7 +213,7 @@ class P5Evaluator():
 
         for prompt_num, prompt in enumerate(self.prompt_list[task_name]):
             print(f"{prompt}: {prompt_num + 1:>2d}/{len(self.prompt_list[task_name])}")
-            test_loader = self.create_loader(task_name=task_name, prompt_list=[prompt])
+            test_loader = self.create_loader(task_name=task_name, prompt_list=[prompt], reduce_batch_size=task not in ['2-11', '2-12'])
 
             # binary output
             if prompt in ['2-11', '2-12']:
@@ -288,8 +296,16 @@ class P5Evaluator():
 
             # evaluate
             # rating output
-            if prompt in ['4-2', '4-4']:
-                predicted_rating = [(float(r), round(float(p))) for (r, p) in zip(gt, pred)]
+            if task in ['4-2', '4-4']:
+                predicted_rating = []
+                invalid_count = 0
+                for r, p in zip(gt, pred):
+                    try:
+                        predicted_rating.append((float(r), float(p)))
+                    except ValueError:
+                        invalid_count += 1
+                print(f"Invalid count: {invalid_count}")
+
                 if predicted_rating:
                     RMSE = root_mean_square_error(predicted_rating, 5.0, 1.0)
                     MAE = mean_absolute_error(predicted_rating, 5.0, 1.0)
@@ -364,8 +380,13 @@ class P5Evaluator():
         Create test loader for a specific task
         task_name: str, name of the task (e.g. review, traditional)
         prompt_list: list, list of task types (e.g. ['4-1', '4-2'])
+        reduce_batch_size: bool, whether to reduce batch size to 1/4th of the original batch size
         '''
         assert task_name in self.prompt_list.keys(), f"Task name {task_name} not found in test task list"
+
+        batch_size = self.args.batch_size
+        if reduce_batch_size:
+            batch_size = int(batch_size / 16)
 
         return get_loader(
                 args=self.args,
@@ -373,8 +394,8 @@ class P5Evaluator():
                 sample_numbers=self.sample_numbers,
                 split=self.data_type,
                 mode='test',
-                batch_size=self.args.batch_size,
-                workers=0,
+                batch_size=batch_size,
+                workers=4,
                 distributed=False,
                 tokenizer=self.tokenizer,
         )
