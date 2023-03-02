@@ -98,17 +98,17 @@ class P5Evaluator():
                             }
         else:
 
-            # self.test_task_list = {'rating': ['1-1'],
-            #                 'sequential': ['2-1'],
-            #                 'explanation': ['3-1'],
-            #                 'review': ['4-2',],
-            #                 'traditional': ['5-1']}
+            self.test_task_list = {'rating': ['1-1', '1-3'],
+                            'sequential': ['2-1', '2-11'],
+                            'explanation': ['3-1'],
+                            'review': ['4-1', '4-4'],
+                            'traditional': ['5-1', '5-5']}
             
-            self.test_task_list = {'rating': ['1-1', '1-2', '1-3', '1-4', '1-5', '1-6', '1-7', '1-8', '1-9', '1-10'],
-                            'sequential': ['2-1', '2-2', '2-3', '2-4', '2-5', '2-6', '2-7', '2-8', '2-9', '2-10', '2-11', '2-12', '2-13'],
-                            'explanation': ['3-1', '3-2', '3-3', '3-4', '3-5', '3-6', '3-7', '3-8', '3-9', '3-10', '3-11', '3-12'],
-                            'review': ['4-1', '4-2', '4-3', '4-4'],
-                            'traditional': ['5-1', '5-2', '5-3', '5-4', '5-5', '5-6', '5-7', '5-8']}
+            # self.test_task_list = {'rating': ['1-1', '1-2', '1-3', '1-4', '1-5', '1-6', '1-7', '1-8', '1-9', '1-10'],
+            #                 'sequential': ['2-1', '2-2', '2-3', '2-4', '2-5', '2-6', '2-7', '2-8', '2-9', '2-10', '2-11', '2-12', '2-13'],
+            #                 'explanation': ['3-1', '3-2', '3-3', '3-4', '3-5', '3-6', '3-7', '3-8', '3-9', '3-10', '3-11', '3-12'],
+            #                 'review': ['4-1', '4-2', '4-3', '4-4'],
+            #                 'traditional': ['5-1', '5-2', '5-3', '5-4', '5-5', '5-6', '5-7', '5-8']}
 
         self.sample_numbers = {'rating': 1, 'sequential': (1, 1, 1), 'explanation': 1, 'review': 1, 'traditional': (1, 1)}
 
@@ -133,48 +133,30 @@ class P5Evaluator():
         
         return 1
     
-
+    # Task 1: Rating Prediction
     def evaluate_task1(self):
+
         task_type = 'task-1'
         print("\nTesting Task 1: Rating Prediction")
         os.makedirs(os.path.join(self.output_dir, task_type), exist_ok=True)
         with open(os.path.join(self.output_dir,task_type,'metrics.tsv'), 'a') as f:
             f.write(f"task\tRMSE\tMAE\n")
+
+
         for task_num, task in enumerate(self.test_task_list['rating']):
             print(f"{task}: {task_num+1:>2d}/{len(self.test_task_list['rating'])}")
-            test_loader = get_loader(
-                args=self.args,
-                task_list= {'rating': [task]},
-                sample_numbers=self.sample_numbers,
-                split=self.data_type,
-                mode='test',
-                batch_size=self.args.batch_size,
-                workers=0,
-                distributed=False,
-                tokenizer=self.tokenizer,
-            )
 
-            ## Evaluate
-            source_text, gt, pred = [], [], []
-            for i, batch in enumerate(test_loader):
-                with torch.no_grad():
-                    results = self.model.generate(
-                        batch['input_ids'].to(self.device),
-                    )
-                    generated = self.tokenizer.batch_decode(results, skip_special_tokens=True)
-                    source_text.extend(batch['source_text'])
-                    gt.extend(batch['target_text'])
-                    pred.extend(generated)
-            assert len(source_text) == len(gt) == len(pred) == len(test_loader.dataset)
-
-            ## Save results
+            # generate
+            test_loader = self.create_loader(task_name='rating', task_type=[task])
+            source_text, gt, pred = self.generate_single(test_loader=test_loader)
             self.save_results(source_text=source_text, gt=gt, pred=pred, task=task, task_type=task_type)
 
-            if task in ['1-3', '1-4', '1-8', '1-9']: # output is not rating
+            # binary output
+            if task in ['1-3', '1-4', '1-8', '1-9']:
                 continue
-
+            # rating output
             else:
-                ## Calculate metrics
+                # evaluate
                 predicted_rating = [(float(r), float(p)) for (r, p) in zip(gt, pred) if p in [str(i/10.0) for i in list(range(10, 50))]]
                 if predicted_rating:
                     RMSE = root_mean_square_error(predicted_rating, 5.0, 1.0)
@@ -182,72 +164,38 @@ class P5Evaluator():
                 else:
                     RMSE, MAE = -1, -1
                 
-                ## Save metrics
                 with open(os.path.join(self.output_dir, task_type,'metrics.tsv'), 'a') as f:
                     f.write(f"{task}\t{RMSE:.4f}\t{MAE:.4f}\n")
         
-        pass
+        return 1
+        
 
+    # Task 2: Sequential Recommendation
     def evaluate_task2(self):
+
         task_type = 'task-2'
         print("\nTesting Task 2: Sequential Recommendation..")
         os.makedirs(os.path.join(self.output_dir, task_type), exist_ok=True)
         with open(os.path.join(self.output_dir, task_type,'metrics.tsv'), 'a') as f:
                 f.write(f"task\thit@5\tndcg@5\thit@10\tndcg@10\n")
-        ## Load test data
+
+                
         for task_num, task in enumerate(self.test_task_list['sequential']):
             print(f"{task}: {task_num+1:>2d}/{len(self.test_task_list['sequential'])}")
-            test_loader = get_loader(
-                args=self.args,
-                task_list= {'sequential': [task]},
-                sample_numbers=self.sample_numbers,
-                split=self.data_type,
-                mode='test',
-                batch_size=self.args.batch_size,
-                workers=0,
-                distributed=False,
-                tokenizer=self.tokenizer,
-            )
+            test_loader = self.create_loader(task_name='sequential', task_type=[task])  
 
-            if task in ['2-11', '2-12']: # output is not sequential
-                ## Evaluate
-                source_text, gt, pred = [], [], []
-                for i, batch in enumerate(test_loader):
-                    with torch.no_grad():
-                        results = self.model.generate(
-                        ) # batch * num_beams * max_length
-                        generated = self.tokenizer.batch_decode(results, skip_special_tokens=True)
-                        source_text.extend(batch['source_text'])
-                        gt.extend(batch['target_text'])
-                        pred.extend(generated)
-
-                ## Save results
+            # binary output
+            if task in ['2-11', '2-12']:
+                # generate
+                source_text, gt, pred = self.generate_single(test_loader=test_loader)
                 self.save_results(source_text=source_text, gt=gt, pred=pred, task=task, task_type=task_type)
-            
+
+            # item output
             else:
-                ## Evaluate
-                source_text, gt, pred = [], [], []
-                for i, batch in enumerate(test_loader):
-                    with torch.no_grad():
-                        results = self.model.generate(
-                            batch['input_ids'].to(self.device),
-                            max_length=50,
-                            num_beams=self.args.num_beams,
-                            no_repeat_ngram_size=0,
-                            num_return_sequences=self.args.num_beams,
-                            early_stopping=True,
-                        ) # batch * num_beams * max_length
-                        generated = self.tokenizer.batch_decode(results, skip_special_tokens=True)
-                        source_text.extend(batch['source_text'])
-                        gt.extend(batch['target_text'])
-                        for j in range(0, len(generated), self.args.num_beams):
-                            pred.append(generated[j:j+self.args.num_beams])
-
-
-                ## Save results
+                source_text, gt, pred = self.generate_multi_beam(test_loader=test_loader)
                 self.save_results(source_text=source_text, gt=gt, pred=pred, task=task, task_type=task_type)
 
-                ## Calculate metrics
+                # evaluate
                 ui_scores = {}
                 for i, pred in enumerate(pred):
                     pred_dict = {}
@@ -258,103 +206,64 @@ class P5Evaluator():
                 metric5 = evaluate_all(ui_scores, gt, 5)[1]
                 metric10 = evaluate_all(ui_scores, gt, 10)[1]
 
-                ## Save metrics
                 with open(os.path.join(self.output_dir, task_type,'metrics.tsv'), 'a') as f:
                     f.write(f"{task}\t{metric5['hit']}\t{metric10['hit']}\t{metric5['ndcg']}\t{metric10['ndcg']}\n")
 
         return 1
 
+
+    # Task 3: Explanation Generation
     def evaluate_task3(self):
+
         task_type = 'task-3'
         print("\nTesting Task 3: Explanation Generation")
         os.makedirs(os.path.join(self.output_dir, task_type), exist_ok=True)
         with open(os.path.join(self.output_dir, task_type,'metrics.tsv'), 'a') as f:
             f.write(f"task\tBLEU4\trouge-1\trouge-2\trouge-l\n")
+
+
         for task_num, task in enumerate(self.test_task_list['explanation']):
             os.makedirs(os.path.join(self.output_dir, task_type, task), exist_ok=True)
             print(f"{task}: {task_num+1:>2d}/{len(self.test_task_list['explanation'])}")
-            test_loader = get_loader(
-                args=self.args,
-                task_list= {'explanation': [task]},
-                sample_numbers=self.sample_numbers,
-                split=self.data_type,
-                mode='test',
-                batch_size=self.args.batch_size//2,
-                workers=0,
-                distributed=False,
-                tokenizer=self.tokenizer,
-            )
 
-            ## Evaluate
-            source_text, gt, pred = [], [], []
-            for i, batch in enumerate(test_loader):
-                with torch.no_grad():
-                    results = self.model.generate(
-                        batch['input_ids'].to(self.device),
-                        min_length=9,
-                        num_beams=12,
-                        num_return_sequences=1,
-                        num_beam_groups=3,
-                        repetition_penalty=0.7
-                    )
-                    generated = self.tokenizer.batch_decode(results, skip_special_tokens=True)
-                    source_text.extend(batch['source_text'])
-                    gt.extend(batch['target_text'])
-                    pred.extend(generated)
-            
-            ## Save results
+            # generate
+            test_loader = self.create_loader(task_name='explanation', task_type=[task])
+            source_text, gt, pred = self.generate_single_beam(test_loader=test_loader)
             self.save_results(source_text=source_text, gt=gt, pred=pred, task=task, task_type=task_type)
 
-            ## Calculate metrics
+            # evaluate
             new_tokens_predict = [l.split() for l in pred]
             new_tokens_test = [ll.split() for ll in gt]
             BLEU4 = bleu_score(new_tokens_test, new_tokens_predict, n_gram=4, smooth=False)
             ROUGE = rouge_score(references=gt, generated=pred)
 
-            ## Save metrics
             with open(os.path.join(self.output_dir, task_type,'metrics.tsv'), 'a') as f:
                 f.write(f"{task}\t{BLEU4:.4f}\t{ROUGE['rouge_1/f_score']:.4f}\t{ROUGE['rouge_2/f_score']:.4f}\t{ROUGE['rouge_l/f_score']:.4f}\n")
         
-        return
+        return 1
+    
 
+    # Task 4: Review Related
     def evaluate_task4(self):
+
         task_type = 'task-4'
         print("\nTesting Task 4: Review Related")
         os.makedirs(os.path.join(self.output_dir, task_type), exist_ok=True)
         with open(os.path.join(self.output_dir, task_type,'metrics.tsv'), 'a') as f:
             f.write(f"task\tBLEU2\trouge-1\trouge-2\trouge-l\n")
+
+
         for task_num, task in enumerate(self.test_task_list['review']):
             os.makedirs(os.path.join(self.output_dir, task_type, task), exist_ok=True)
             print(f"{task}: {task_num+1:>2d}/{len(self.test_task_list['review'])}")
-            test_loader = get_loader(
-                args=self.args,
-                task_list= {'review': [task]},
-                sample_numbers=self.sample_numbers,
-                split=self.data_type,
-                mode='test',
-                batch_size=self.args.batch_size,
-                workers=0,
-                distributed=False,
-                tokenizer=self.tokenizer,
-            )
-
             
-            ## Evaluate
-            source_text, gt, pred = [], [], []
-            for i, batch in enumerate(test_loader):
-                with torch.no_grad():
-                    results = self.model.generate(
-                        batch['input_ids'].to(self.device),
-                    )
-                    generated = self.tokenizer.batch_decode(results, skip_special_tokens=True)
-                    source_text.extend(batch['source_text'])
-                    gt.extend(batch['target_text'])
-                    pred.extend(generated)
-            
-            ## Save results
+            # generate
+            test_loader = self.create_loader(task_name='review', task_type=[task])
+            source_text, gt, pred = self.generate_single(test_loader=test_loader)
             self.save_results(source_text=source_text, gt=gt, pred=pred, task=task, task_type=task_type)
 
-            ## Calculate metrics
+            # evaluate
+            # rating output
             if task in ['4-2','4-4']:
                 predicted_rating = [(float(r), round(float(p))) for (r, p) in zip(gt, pred)]
                 if predicted_rating:
@@ -366,7 +275,7 @@ class P5Evaluator():
                 with open(os.path.join(self.output_dir, task_type,'metrics.tsv'), 'a') as f:
                     f.write(f"{task}\t{RMSE:.4f}\t{MAE:.4f}\n")
                 
-            
+            # summary output
             elif task in ['4-1', '4-3']:
                 new_tokens_predict = [l.split() for l in pred]
                 new_tokens_test = [ll.split() for ll in gt]
@@ -376,80 +285,149 @@ class P5Evaluator():
                 with open(os.path.join(self.output_dir, task_type,'metrics.tsv'), 'a') as f:
                     f.write(f"{task}\t{BLEU2:.4f}\t{ROUGE['rouge_1/f_score']:.4f}\t{ROUGE['rouge_2/f_score']:.4f}\t{ROUGE['rouge_l/f_score']:.4f}\n")
 
+        return 1
+    
+
+    # Task 5: Direct Recommendation
     def evaluate_task5(self):
+
         task_type = 'task-5'
         print("\nTesting Task 5: Direct Recommendation..")
         os.makedirs(os.path.join(self.output_dir, task_type), exist_ok=True)
         with open(os.path.join(self.output_dir, task_type,'metrics.tsv'), 'a') as f:
                 f.write(f"task\thit@5\thit@5\tndcg@5\thit@10\tndcg@10\n")
+
+
         for task_num, task in enumerate(self.test_task_list['traditional']):
             os.makedirs(os.path.join(self.output_dir, task_type, task), exist_ok=True)
             print(f"{task}: {task_num+1:>2d}/{len(self.test_task_list['traditional'])}")
-            test_loader = get_loader(
-                args=self.args,
-                task_list= {'traditional': [task]},
-                sample_numbers=self.sample_numbers,
-                split=self.data_type,
-                mode='test',
-                batch_size=self.args.batch_size,
-                workers=0,
-                distributed=False,
-                tokenizer=self.tokenizer,
-            )
 
-            ## Evaluate
-            source_text, gt, pred = [], [], []
-            if task in ['5-1', '5-2', '5-3', '5-4']:
-                for i, batch in enumerate(test_loader):
-                    with torch.no_grad():
-                        results = self.model.generate(
-                            batch['input_ids'].to(self.device),
-                        )
-                        generated = self.tokenizer.batch_decode(results, skip_special_tokens=True)
-                        source_text.extend(batch['source_text'])
-                        gt.extend(batch['target_text'])
-                        pred.extend(generated)
+            # generate
+            test_loader = self.create_loader(task_name='traditional', task_type=[task])
+            if task in ['5-1', '5-2', '5-3', '5-4']: # binary output
+                source_text, gt, pred = self.generate_single(test_loader=test_loader)
+                self.save_results(source_text=source_text, gt=gt, pred=pred, task=task, task_type=task_type)
+            elif task in ['5-5', '5-6', '5-7', '5-8']: # item output
+                source_text, gt, pred = self.generate_topk(test_loader=test_loader)
+                self.save_results(source_text=source_text, gt=gt, pred=pred, task=task, task_type=task_type)
 
-            elif task in ['5-5', '5-6', '5-7', '5-8']:
-                for i, batch in enumerate(test_loader):
-                    with torch.no_grad():
-                        results = self.model.generate(
-                            batch['input_ids'].to(self.device),
-                            max_length=10,
-                            num_beams=self.args.num_beams,
-                            num_return_sequences=self.args.num_beams,
-                            no_repeat_ngram_size=0,
-                            early_stopping=True,
-                        )
-                        generated = self.tokenizer.batch_decode(results, skip_special_tokens=True)
-                        source_text.extend(batch['source_text'])
-                        gt.extend(batch['target_text'])
-                        for j in range(0, len(generated), self.args.num_beams):
-                            pred.append(generated[j:j+self.args.num_beams])
-            ## Save results
-            self.save_results(source_text=source_text, gt=gt, pred=pred, task=task, task_type=task_type)
+                # evaluate
+                if task in ['5-5', '5-6', '5-7', '5-8']:
+                    ui_scores = {}
+                    for i, pred in enumerate(pred):
+                        pred_dict = {}
+                        for j, p in enumerate(pred):
+                            pred_dict[p] = -(j+1)
+                        ui_scores[i] = pred_dict
+                    
+                    metric1 = evaluate_all(ui_scores, gt, 1)[1]
+                    metric5 = evaluate_all(ui_scores, gt, 5)[1]
+                    metric10 = evaluate_all(ui_scores, gt, 10)[1]
 
-
-            if task in ['5-5', '5-6', '5-7', '5-8']:
-                ## Calculate metrics
-                ui_scores = {}
-                for i, pred in enumerate(pred):
-                    pred_dict = {}
-                    for j, p in enumerate(pred):
-                        pred_dict[p] = -(j+1)
-                    ui_scores[i] = pred_dict
-                
-                metric1 = evaluate_all(ui_scores, gt, 1)[1]
-                metric5 = evaluate_all(ui_scores, gt, 5)[1]
-                metric10 = evaluate_all(ui_scores, gt, 10)[1]
-
-                ## Save metrics
-                with open(os.path.join(self.output_dir, task_type,'metrics.tsv'), 'a') as f:
-                    f.write(f"{task}\t{metric1['hit']}\t{metric5['hit']}\t{metric10['hit']}\t{metric5['ndcg']}\t{metric10['ndcg']}\n")
+                    with open(os.path.join(self.output_dir, task_type,'metrics.tsv'), 'a') as f:
+                        f.write(f"{task}\t{metric1['hit']}\t{metric5['hit']}\t{metric10['hit']}\t{metric5['ndcg']}\t{metric10['ndcg']}\n")
 
         return 1
 
+
+    '''
+    Helper functions
+    '''
+
+
+
+    def create_loader(self, task_name:str, task_type:list):
+        '''
+        Create test loader for a specific task
+        task_name: str, name of the task (e.g. review, traditional)
+        task_type: list, list of task types (e.g. ['4-1', '4-2'])
+        '''
+        assert task_name in self.test_task_list.keys(), f"Task name {task_name} not found in test task list"
+
+        return get_loader(
+            args=self.args,
+            task_list= {task_name: task_type},
+            sample_numbers=self.sample_numbers,
+            split=self.data_type,
+            mode='test',
+            batch_size=self.args.batch_size,
+            workers=0,
+            distributed=False,
+            tokenizer=self.tokenizer,
+        )
+
+
+    def generate_single(self, test_loader):
+        '''
+        Generate single output with greedy search
+        '''
+        source_text, gt, pred = [], [], []
+        for i, batch in enumerate(test_loader):
+            with torch.no_grad():
+                results = self.model.generate(
+                    batch['input_ids'].to(self.device),
+                )
+                generated = self.tokenizer.batch_decode(results, skip_special_tokens=True)
+                source_text.extend(batch['source_text'])
+                gt.extend(batch['target_text'])
+                pred.extend(generated)
+        return source_text, gt, pred
+    
+
+    def generate_single_beam(self, test_loader):
+        '''
+        Generate single output with beam search
+        '''
+        source_text, gt, pred = [], [], []
+        for i, batch in enumerate(test_loader):
+            with torch.no_grad():
+                results = self.model.generate(
+                    batch['input_ids'].to(self.device),
+                    min_length=9,
+                    num_beams=12,
+                    num_return_sequences=1,
+                    num_beam_groups=3,
+                    repetition_penalty=0.7
+                )
+                generated = self.tokenizer.batch_decode(results, skip_special_tokens=True)
+                source_text.extend(batch['source_text'])
+                gt.extend(batch['target_text'])
+                pred.extend(generated)
+        return source_text, gt, pred
+
+
+    def generate_multi_beam(self, test_loader):
+        '''
+        Generate multiple outputs with beam search
+        '''
+        source_text, gt, pred = [], [], []
+        for i, batch in enumerate(test_loader):
+            with torch.no_grad():
+                results = self.model.generate(
+                    batch['input_ids'].to(self.device),
+                    max_length=50,
+                    num_beams=self.args.num_beams,
+                    no_repeat_ngram_size=0,
+                    num_return_sequences=self.args.num_beams,
+                    early_stopping=True,
+                ) # batch * num_beams * max_length
+                generated = self.tokenizer.batch_decode(results, skip_special_tokens=True)
+                source_text.extend(batch['source_text'])
+                gt.extend(batch['target_text'])
+                for j in range(0, len(generated), self.args.num_beams):
+                    pred.append(generated[j:j+self.args.num_beams])
+        return source_text, gt, pred
+    
+
     def save_results(self, source_text, gt, pred, task, task_type):
+        '''
+        Save results to json file
+        source_text: list, list of source text
+        gt: list, list of ground truth
+        pred: list, list of predictions
+        task: str, name of the task (e.g. task-1, task-2)
+        task_type: str, name of the task type (e.g. 1-1, 1-2)
+        '''
         total = []
         for s, g, p in zip(source_text, gt, pred):
             total.append( {
@@ -460,6 +438,7 @@ class P5Evaluator():
         os.makedirs(os.path.join(self.output_dir, task_type, task), exist_ok=True)
         json.dump(total, open(os.path.join(self.output_dir, task_type, task, 'results.json'), 'w'), indent=4)
 
+
     def create_tokenizer(self, tokenizer_path:str, args):
         if tokenizer_path is None:
             print(f"Loading Tokenizer from {args.backbone}..")
@@ -467,6 +446,7 @@ class P5Evaluator():
         else:
             print(f"Loading Tokenizer from {tokenizer_path}..")
             return T5TokenizerFast.from_pretrained(tokenizer_path)
+
 
     def create_config(self, args):
 
@@ -484,9 +464,9 @@ class P5Evaluator():
 
         return config
     
+
     def create_model(self, model_path, args):
 
-        
         config = self.create_config(args)
         model_class = P5Pretraining
         model_name = args.backbone
