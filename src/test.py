@@ -81,7 +81,8 @@ class P5Evaluator():
         if self.model_type == 'naive':
             self.tokenizer = self.create_tokenizer(tokenizer_path=None, args=args)
             self.model = self.create_model(
-                    model_path=os.path.join(project_dir, args.load, 'BEST_EVAL_LOSS.pth'),
+                    model_path=os.path.join(project_dir, args.load,
+                                            'Epoch10.pth' if args.use_epoch_10 else 'BEST_EVAL_LOSS.pth'),
                     args=args
             )
         elif self.model_type == 'atomic':

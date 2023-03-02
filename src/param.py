@@ -117,6 +117,8 @@ def parse_args(parse=True, **optional_kwargs):
     # Do validation
     parser.add_argument("--run_valid", action="store_true")
 
+    parser.add_argument("--use_epoch_10", action="store_true")
+
     # Parse the arguments.
     if parse:
         args = parser.parse_args()
