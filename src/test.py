@@ -170,17 +170,21 @@ class P5Evaluator():
             ## Save results
             self.save_results(source_text=source_text, gt=gt, pred=pred, task=task, task_type=task_type)
 
-            ## Calculate metrics
-            predicted_rating = [(float(r), float(p)) for (r, p) in zip(gt, pred) if p in [str(i/10.0) for i in list(range(10, 50))]]
-            if predicted_rating:
-                RMSE = root_mean_square_error(predicted_rating, 5.0, 1.0)
-                MAE = mean_absolute_error(predicted_rating, 5.0, 1.0)
+            if task in ['1-3', '1-4', '1-8', '1-9']: # output is not rating
+                continue
+
             else:
-                RMSE, MAE = -1, -1
-            
-            ## Save metrics
-            with open(os.path.join(self.output_dir, task_type,'metrics.tsv'), 'a') as f:
-                f.write(f"{task}\t{RMSE:.4f}\t{MAE:.4f}\n")
+                ## Calculate metrics
+                predicted_rating = [(float(r), float(p)) for (r, p) in zip(gt, pred) if p in [str(i/10.0) for i in list(range(10, 50))]]
+                if predicted_rating:
+                    RMSE = root_mean_square_error(predicted_rating, 5.0, 1.0)
+                    MAE = mean_absolute_error(predicted_rating, 5.0, 1.0)
+                else:
+                    RMSE, MAE = -1, -1
+                
+                ## Save metrics
+                with open(os.path.join(self.output_dir, task_type,'metrics.tsv'), 'a') as f:
+                    f.write(f"{task}\t{RMSE:.4f}\t{MAE:.4f}\n")
         
         pass
 
@@ -205,44 +209,58 @@ class P5Evaluator():
                 tokenizer=self.tokenizer,
             )
 
-            ## Evaluate
-            source_text, gt, pred = [], [], []
-            for i, batch in enumerate(test_loader):
-                with torch.no_grad():
-                    results = self.model.generate(
-                        batch['input_ids'].to(self.device),
-                        max_length=50,
-                        num_beams=self.args.num_beams,
-                        no_repeat_ngram_size=0,
-                        num_return_sequences=self.args.num_beams,
-                        early_stopping=True,
-                    ) # batch * num_beams * max_length
-                    generated = self.tokenizer.batch_decode(results, skip_special_tokens=True)
-                    source_text.extend(batch['source_text'])
-                    gt.extend(batch['target_text'])
-                    for j in range(0, len(generated), self.args.num_beams):
-                        pred.append(generated[j:j+self.args.num_beams])
+            if task in ['2-11', '2-12']: # output is not sequential
+                ## Evaluate
+                source_text, gt, pred = [], [], []
+                for i, batch in enumerate(test_loader):
+                    with torch.no_grad():
+                        results = self.model.generate(
+                        ) # batch * num_beams * max_length
+                        generated = self.tokenizer.batch_decode(results, skip_special_tokens=True)
+                        source_text.extend(batch['source_text'])
+                        gt.extend(batch['target_text'])
+                        pred.extend(generated)
 
-
-            ## Save results
-            self.save_results(source_text=source_text, gt=gt, pred=pred, task=task, task_type=task_type)
-
-            from IPython import embed; embed()
-            ## Calculate metrics
-            ui_scores = {}
-            for i, pred in enumerate(pred):
-                pred_dict = {}
-                for j, p in enumerate(pred):
-                    pred_dict[p] = -(j+1)
-                ui_scores[i] = pred_dict
+                ## Save results
+                self.save_results(source_text=source_text, gt=gt, pred=pred, task=task, task_type=task_type)
             
-            from IPython import embed; embed()
-            metric5 = evaluate_all(ui_scores, gt, 5)[1]
-            metric10 = evaluate_all(ui_scores, gt, 10)[1]
+            else:
+                ## Evaluate
+                source_text, gt, pred = [], [], []
+                for i, batch in enumerate(test_loader):
+                    with torch.no_grad():
+                        results = self.model.generate(
+                            batch['input_ids'].to(self.device),
+                            max_length=50,
+                            num_beams=self.args.num_beams,
+                            no_repeat_ngram_size=0,
+                            num_return_sequences=self.args.num_beams,
+                            early_stopping=True,
+                        ) # batch * num_beams * max_length
+                        generated = self.tokenizer.batch_decode(results, skip_special_tokens=True)
+                        source_text.extend(batch['source_text'])
+                        gt.extend(batch['target_text'])
+                        for j in range(0, len(generated), self.args.num_beams):
+                            pred.append(generated[j:j+self.args.num_beams])
 
-            ## Save metrics
-            with open(os.path.join(self.output_dir, task_type,'metrics.tsv'), 'a') as f:
-                f.write(f"{task}\t{metric5['hit']}\t{metric10['hit']}\t{metric5['ndcg']}\t{metric10['ndcg']}\n")
+
+                ## Save results
+                self.save_results(source_text=source_text, gt=gt, pred=pred, task=task, task_type=task_type)
+
+                ## Calculate metrics
+                ui_scores = {}
+                for i, pred in enumerate(pred):
+                    pred_dict = {}
+                    for j, p in enumerate(pred):
+                        pred_dict[p] = -(j+1)
+                    ui_scores[i] = pred_dict
+                
+                metric5 = evaluate_all(ui_scores, gt, 5)[1]
+                metric10 = evaluate_all(ui_scores, gt, 10)[1]
+
+                ## Save metrics
+                with open(os.path.join(self.output_dir, task_type,'metrics.tsv'), 'a') as f:
+                    f.write(f"{task}\t{metric5['hit']}\t{metric10['hit']}\t{metric5['ndcg']}\t{metric10['ndcg']}\n")
 
         return 1
 
@@ -320,6 +338,7 @@ class P5Evaluator():
                 tokenizer=self.tokenizer,
             )
 
+            
             ## Evaluate
             source_text, gt, pred = [], [], []
             for i, batch in enumerate(test_loader):
