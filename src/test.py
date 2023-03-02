@@ -2,6 +2,8 @@
 import sys
 import os.path
 import os
+from typing import Optional
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from transformers import T5TokenizerFast
@@ -29,13 +31,13 @@ def load_pickle(filename):
 def save_pickle(data, filename):
     with open(filename, "wb") as f:
         pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
-        
+
 import json
 
 def load_json(file_path):
     with open(file_path, "r") as f:
         return json.load(f)
-    
+
 def ReadLineFromFile(path):
     lines = []
     with open(path,'r') as fd:
@@ -71,13 +73,26 @@ class P5Evaluator():
         os.makedirs(self.output_dir, exist_ok=True)
 
         ## Load pretrained model and tokenizer
-        self.tokenizer = self.create_tokenizer(
-            tokenizer_path= None if self.model_type == 'naive' else os.path.join(project_dir, args.load, 'tokenizer-0/'),
-            args=args)
-        self.model = self.create_model(
-            model_path=os.path.join(project_dir, args.load, 'BEST_EVAL_LOSS.pth'),
-            args=args)
+
+        if self.model_type == 'naive':
+            self.tokenizer = self.create_tokenizer(tokenizer_path=None, args=args)
+            self.model = self.create_model(
+                model_path=os.path.join(project_dir, args.load, 'BEST_EVAL_LOSS.pth'),
+                args=args
+            )
+        elif self.model_type == 'atomic':
+            self.tokenizer = self.create_tokenizer(
+                    tokenizer_path=os.path.join(project_dir, args.load, 'tokenizer-0/'), args=args
+            )
+            self.model = self.create_model(
+                model_path=os.path.join(project_dir, args.load, 'BEST_EVAL_LOSS.pth'),
+                args=args
+            )
+        else:
+            raise NotImplementedError(f"model type {self.model_type} not implemented")
+
         self.model.tokenizer = self.tokenizer
+        print(f"Vocab size: {len(self.tokenizer)}")
 
         ## Load test data  
         data_splits = load_pickle(os.path.join(project_dir, f'data/{self.data_type}/rating_splits_augmented.pkl'))
@@ -88,7 +103,7 @@ class P5Evaluator():
         print(f"number of users {len(data_maps['user2id'])}")
         print(f"number of items {len(data_maps['item2id'])}")
 
-        
+
         if self.data_type == 'yelp':
             self.test_task_list = {'rating': ['1-1', '1-2', '1-3', '1-4', '1-5', '1-6', '1-7', '1-8', '1-9'],
                             'sequential': ['2-1', '2-2', '2-3', '2-4', '2-5', '2-6', '2-7', '2-8', '2-9', '2-10','2-11', '2-12'],
@@ -103,7 +118,7 @@ class P5Evaluator():
             #                 'explanation': ['3-1'],
             #                 'review': ['4-2',],
             #                 'traditional': ['5-1']}
-            
+
             self.test_task_list = {'rating': ['1-1', '1-2', '1-3', '1-4', '1-5', '1-6', '1-7', '1-8', '1-9', '1-10'],
                             'sequential': ['2-1', '2-2', '2-3', '2-4', '2-5', '2-6', '2-7', '2-8', '2-9', '2-10', '2-11', '2-12', '2-13'],
                             'explanation': ['3-1', '3-2', '3-3', '3-4', '3-5', '3-6', '3-7', '3-8', '3-9', '3-10', '3-11', '3-12'],
@@ -112,7 +127,7 @@ class P5Evaluator():
 
         self.sample_numbers = {'rating': 1, 'sequential': (1, 1, 1), 'explanation': 1, 'review': 1, 'traditional': (1, 1)}
 
-    
+
     def evaluate(self):
         if self.task_type == 'task-1':
             self.evaluate_task1()
@@ -130,9 +145,9 @@ class P5Evaluator():
             self.evaluate_task3()
             self.evaluate_task4()
             self.evaluate_task5()
-        
+
         return 1
-    
+
 
     def evaluate_task1(self):
         task_type = 'task-1'
@@ -149,7 +164,7 @@ class P5Evaluator():
                 split=self.data_type,
                 mode='test',
                 batch_size=self.args.batch_size,
-                workers=0,
+                workers=4,
                 distributed=False,
                 tokenizer=self.tokenizer,
             )
@@ -181,11 +196,11 @@ class P5Evaluator():
                     MAE = mean_absolute_error(predicted_rating, 5.0, 1.0)
                 else:
                     RMSE, MAE = -1, -1
-                
+
                 ## Save metrics
                 with open(os.path.join(self.output_dir, task_type,'metrics.tsv'), 'a') as f:
                     f.write(f"{task}\t{RMSE:.4f}\t{MAE:.4f}\n")
-        
+
         pass
 
     def evaluate_task2(self):
@@ -223,7 +238,7 @@ class P5Evaluator():
 
                 ## Save results
                 self.save_results(source_text=source_text, gt=gt, pred=pred, task=task, task_type=task_type)
-            
+
             else:
                 ## Evaluate
                 source_text, gt, pred = [], [], []
@@ -254,7 +269,7 @@ class P5Evaluator():
                     for j, p in enumerate(pred):
                         pred_dict[p] = -(j+1)
                     ui_scores[i] = pred_dict
-                
+
                 metric5 = evaluate_all(ui_scores, gt, 5)[1]
                 metric10 = evaluate_all(ui_scores, gt, 10)[1]
 
@@ -301,7 +316,7 @@ class P5Evaluator():
                     source_text.extend(batch['source_text'])
                     gt.extend(batch['target_text'])
                     pred.extend(generated)
-            
+
             ## Save results
             self.save_results(source_text=source_text, gt=gt, pred=pred, task=task, task_type=task_type)
 
@@ -314,7 +329,7 @@ class P5Evaluator():
             ## Save metrics
             with open(os.path.join(self.output_dir, task_type,'metrics.tsv'), 'a') as f:
                 f.write(f"{task}\t{BLEU4:.4f}\t{ROUGE['rouge_1/f_score']:.4f}\t{ROUGE['rouge_2/f_score']:.4f}\t{ROUGE['rouge_l/f_score']:.4f}\n")
-        
+
         return
 
     def evaluate_task4(self):
@@ -338,7 +353,7 @@ class P5Evaluator():
                 tokenizer=self.tokenizer,
             )
 
-            
+
             ## Evaluate
             source_text, gt, pred = [], [], []
             for i, batch in enumerate(test_loader):
@@ -350,7 +365,7 @@ class P5Evaluator():
                     source_text.extend(batch['source_text'])
                     gt.extend(batch['target_text'])
                     pred.extend(generated)
-            
+
             ## Save results
             self.save_results(source_text=source_text, gt=gt, pred=pred, task=task, task_type=task_type)
 
@@ -362,11 +377,11 @@ class P5Evaluator():
                     MAE = mean_absolute_error(predicted_rating, 5.0, 1.0)
                 else:
                     RMSE, MAE = -1, -1
-                    
+
                 with open(os.path.join(self.output_dir, task_type,'metrics.tsv'), 'a') as f:
                     f.write(f"{task}\t{RMSE:.4f}\t{MAE:.4f}\n")
-                
-            
+
+
             elif task in ['4-1', '4-3']:
                 new_tokens_predict = [l.split() for l in pred]
                 new_tokens_test = [ll.split() for ll in gt]
@@ -438,7 +453,7 @@ class P5Evaluator():
                     for j, p in enumerate(pred):
                         pred_dict[p] = -(j+1)
                     ui_scores[i] = pred_dict
-                
+
                 metric1 = evaluate_all(ui_scores, gt, 1)[1]
                 metric5 = evaluate_all(ui_scores, gt, 5)[1]
                 metric10 = evaluate_all(ui_scores, gt, 10)[1]
@@ -460,13 +475,26 @@ class P5Evaluator():
         os.makedirs(os.path.join(self.output_dir, task_type, task), exist_ok=True)
         json.dump(total, open(os.path.join(self.output_dir, task_type, task, 'results.json'), 'w'), indent=4)
 
-    def create_tokenizer(self, tokenizer_path:str, args):
-        if tokenizer_path is None:
-            print(f"Loading Tokenizer from {args.backbone}..")
-            return T5TokenizerFast.from_pretrained(args.backbone)
-        else:
+    @staticmethod
+    def create_tokenizer(tokenizer_path: Optional[str], args):
+        # Workaround for loading tokenizer taking too long
+        tokenizer = T5TokenizerFast.from_pretrained(args.backbone)
+
+        if tokenizer_path is not None:
             print(f"Loading Tokenizer from {tokenizer_path}..")
-            return T5TokenizerFast.from_pretrained(tokenizer_path)
+
+            added_token = json.load(open(os.path.join(tokenizer_path, "added_tokens.json")))
+            # Sort by token ID
+            added_token = [x[0] for x in sorted(added_token.items(), key=lambda y: y[1])]
+
+            print(f"Adding {len(added_token)} extra tokens..")
+
+            tokenizer.add_tokens(added_token, special_tokens=True)
+
+        else:
+            print("No extra tokens.")
+
+        return tokenizer
 
     def create_config(self, args):
 
@@ -483,10 +511,10 @@ class P5Evaluator():
         config.losses = args.losses
 
         return config
-    
+
     def create_model(self, model_path, args):
 
-        
+
         config = self.create_config(args)
         model_class = P5Pretraining
         model_name = args.backbone
@@ -495,13 +523,14 @@ class P5Evaluator():
             config=config
         )
         print(f"Loading Model from {model_path}..")
-        model.resize_token_embeddings(self.tokenizer.vocab_size)
-        state_dict = load_state_dict(model_path, self.device)
+        model.resize_token_embeddings(len(self.tokenizer))
+        print(f"Resized Token Embeddings to {len(self.tokenizer)}...")
+        state_dict = load_state_dict(model_path, "cpu")
         model.load_state_dict(state_dict)
         model.to(self.device)
 
         return model
-    
+
 
 if __name__ == "__main__":
     args = parse_args()
