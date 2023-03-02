@@ -177,8 +177,16 @@ class P5Evaluator():
             # rating output
             else:
                 # evaluate
-                predicted_rating = [(float(r), float(p)) for (r, p) in zip(gt, pred) if
-                                    p in [str(i / 10.0) for i in list(range(10, 50))]]
+                predicted_rating = []
+                invalid_count = 0
+                for r, p in zip(gt, pred):
+                    try:
+                        predicted_rating.append((float(r), float(p)))
+                    except ValueError:
+                        invalid_count += 1
+
+                print(f"Invalid count: {invalid_count}")
+
                 if predicted_rating:
                     RMSE = root_mean_square_error(predicted_rating, 5.0, 1.0)
                     MAE = mean_absolute_error(predicted_rating, 5.0, 1.0)
@@ -281,7 +289,16 @@ class P5Evaluator():
             # evaluate
             # rating output
             if task in ['4-2', '4-4']:
-                predicted_rating = [(float(r), round(float(p))) for (r, p) in zip(gt, pred)]
+                predicted_rating = []
+                invalid_count = 0
+                for r, p in zip(gt, pred):
+                    try:
+                        predicted_rating.append((float(r), float(p)))
+                    except ValueError:
+                        invalid_count += 1
+
+                print(f"Invalid count: {invalid_count}")
+
                 if predicted_rating:
                     RMSE = root_mean_square_error(predicted_rating, 5.0, 1.0)
                     MAE = mean_absolute_error(predicted_rating, 5.0, 1.0)
