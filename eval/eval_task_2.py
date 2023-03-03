@@ -1,22 +1,22 @@
 import argparse
 import json
-import warnings
 import os
+import warnings
 
 import pandas as pd
 
-from eval_utils import evaluate_binary, evaluate_rating, recursive_path_finder
+from eval_utils import evaluate_binary, evaluate_rating, evaluate_sequential, recursive_path_finder
 
 warnings.filterwarnings("ignore")
 
 
 def main(path: str):
 
-    # configure
-    task = ['1-1', '1-2', '1-3', '1-4', '1-5', '1-6', '1-7', '1-8', '1-9', '1-10']
-    binary_prompt = ['1-3', '1-4', '1-8', '1-9']
-    all_result = {"rmse": [], "mae": [], "acc": [], "f1": [], "precision": [], "recall": [], "invalid": [],
-                  "rating_1": [], "rating_2": [], "rating_3": [], "rating_4": [], "rating_5": []}
+    # configure for sequential recommendation
+    task = ["2-1", "2-2", "2-3", "2-4", "2-5", "2-6", "2-7", "2-8", "2-9", "2-10", "2-13"]
+    binary_prompt = ["2-11", "2-12"]
+    all_result = {"hit@5": [], "ndcg@5": [], "hit@10": [], "ndcg@10": [], "acc": [], "f1": [], "precision": [],
+                  "recall": [], "invalid": []}
 
     output_path = os.path.join(
             os.path.pardir,
@@ -47,7 +47,7 @@ def main(path: str):
                     all_result[metric].append(None)
 
         else:
-            evaluation = evaluate_rating(pred, gt)
+            evaluation = evaluate_sequential(pred, gt)
 
             for key, value in evaluation.items():
                 print(f"  {key}: {value}")
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     parser.add_argument("--path", type=str, help="output path")
     args = parser.parse_args()
 
-    task_path_entries = recursive_path_finder(args.path, "task-1")
+    task_path_entries = recursive_path_finder(args.path, "task-2")
 
     all_results = {task_path_entry: main(task_path_entry) for task_path_entry in task_path_entries}
 
@@ -79,4 +79,4 @@ if __name__ == "__main__":
     for result in all_results:
         all_results[result] = all_results[result].to_dict(orient="index")
 
-    json.dump(all_results, open(os.path.join("metrics_task1.json"), "w", encoding="utf-8"), indent=4)
+    json.dump(all_results, open(os.path.join("metrics_task2.json"), "w", encoding="utf-8"), indent=4)
