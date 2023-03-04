@@ -1,5 +1,6 @@
 import os
 
+from metrics.utils import bleu_score, rouge_score
 from sklearn.metrics import (accuracy_score, f1_score, precision_score,
                              recall_score)
 
@@ -51,6 +52,27 @@ def evaluate_sequential(pred, gt, k_list=None):
         result[f"ndcg@{k}"] = ndcg
 
     return result
+
+
+def evaluate_generation(pred: list[str], gt: list[str]):
+    pred = [p.strip() for p in pred]
+    gt = [g.strip() for g in gt]
+    rouge = rouge_score(pred, gt)
+
+    pred = [p.split() for p in pred]
+    gt = [g.split() for g in gt]
+    bleu_4 = bleu_score(pred, gt, n_gram=4)
+
+    rouge_1 = rouge["rouge_1/f_score"]
+    rouge_2 = rouge["rouge_2/f_score"]
+    rouge_l = rouge["rouge_l/f_score"]
+
+    return {
+        "bleu-4": bleu_4,
+        "rouge-1": rouge_1,
+        "rouge-2": rouge_2,
+        "rouge-l": rouge_l,
+    }
 
 
 def evaluate_binary(pred, gt):
