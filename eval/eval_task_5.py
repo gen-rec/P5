@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import warnings
+from multiprocessing import Pool
 
 import pandas as pd
 
@@ -75,8 +76,9 @@ if __name__ == "__main__":
 
     task_path_entries = recursive_path_finder(args.path, "task-5")
 
-    all_results = {"/".join(task_path_entry.split(os.sep)[-5:]): main(task_path_entry) for task_path_entry in
-                   task_path_entries}
+    all_keys = ["/".join(task_path_entry.split(os.sep)[-5:]) for task_path_entry in task_path_entries]
+    with Pool(8) as p:
+        all_results = dict(zip(all_keys, p.map(main, task_path_entries)))
 
     # Write the results to a JSON file
     for experiment_path in all_results:
