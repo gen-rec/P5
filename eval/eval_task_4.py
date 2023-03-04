@@ -52,6 +52,7 @@ def evaluate(task_path_entries: list[str], output_path: str) -> None:
     all_result = {}
     tasks = ("4-1", "4-2", "4-3", "4-4")
     tasks_type = ("language", "rating", "language", "rating")
+    keys = ["bleu", "rouge-1", "rouge-2", "rouge-l", "rmse", "mae"]
 
     for task_path_entry in task_path_entries:
         print(f"Processing {task_path_entry}")
@@ -152,11 +153,23 @@ def evaluate(task_path_entries: list[str], output_path: str) -> None:
 
         result.to_csv(os.path.join(task_path_entry, "metrics.csv"), index=True, index_label="task")
 
-    # Write the results to a JSON file
-    for result in all_result.keys():
-        all_result[result] = all_result[result].to_dict(orient="index")
+    columns = ["epoch", "token_method", "dataset", "trained_task", "prompt_id"]
+    columns.extend(keys)
+    final_result = pd.DataFrame(columns=columns)
+    for experiment_path in all_result:
+        epoch, token_method, dataset, trained_task, _ = experiment_path.split("/")
 
-    json.dump(all_result, open(os.path.join(output_path, "metrics_task4.json"), "w", encoding="utf-8"), indent=4)
+        # Concatenate the results
+        results = all_result[experiment_path]
+        results["epoch"] = epoch
+        results["token_method"] = token_method
+        results["dataset"] = dataset
+        results["trained_task"] = trained_task
+        results["prompt_id"] = results.index
+        final_result = pd.concat([final_result, results], axis=0)
+
+    final_result.to_csv(os.path.join(output_path, "metrics_task4.csv"), index=False)
+    # json.dump(all_result, open(os.path.join(output_path, "metrics_task3.json"), "w", encoding="utf-8"), indent=4)
 
 
 def check_missing_files(task_path_entries: list[str]) -> None:

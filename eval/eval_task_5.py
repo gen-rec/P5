@@ -9,15 +9,16 @@ from eval_utils import evaluate_binary, evaluate_rating, evaluate_sequential, re
 
 warnings.filterwarnings("ignore")
 
-keys = ["hit@5", "ndcg@5", "hit@10", "ndcg@10", "acc", "f1", "precision", "recall", "invalid"]
+keys = ["hit@1", "hit@5", "ndcg@5", "hit@10", "ndcg@10", "acc", "f1", "precision", "recall", "invalid"]
 
 
 def main(path: str):
 
-    # configure for sequential recommendation
-    task = ["2-1", "2-2", "2-3", "2-4", "2-5", "2-6", "2-7", "2-8", "2-9", "2-10", "2-11", "2-12", "2-13"]
-    binary_prompt = ["2-11", "2-12"]
-    all_result = {k: [] for k in keys}
+    # configure for direct recommendation
+    task = ["5-1", "5-2", "5-3", "5-4", "5-5", "5-6", "5-7", "5-8"]
+    binary_prompt = ["5-1", "5-2", "5-3", "5-4"]
+    all_result = {"hit@1": [], "hit@5": [], "ndcg@5": [], "hit@10": [], "ndcg@10": [], "acc": [], "f1": [],
+                  "precision": [], "recall": [], "invalid": []}
 
     output_path = os.path.join(
             os.path.pardir,
@@ -48,7 +49,7 @@ def main(path: str):
                     all_result[metric].append(None)
 
         else:
-            evaluation = evaluate_sequential(pred, gt)
+            evaluation = evaluate_sequential(pred, gt, k_list=[1, 5, 10])
 
             for key, value in evaluation.items():
                 print(f"  {key}: {value}")
@@ -72,7 +73,7 @@ if __name__ == "__main__":
     parser.add_argument("--path", type=str, help="output path")
     args = parser.parse_args()
 
-    task_path_entries = recursive_path_finder(args.path, "task-2")
+    task_path_entries = recursive_path_finder(args.path, "task-5")
 
     all_results = {"/".join(task_path_entry.split(os.sep)[-5:]): main(task_path_entry) for task_path_entry in
                    task_path_entries}
@@ -96,5 +97,4 @@ if __name__ == "__main__":
         results["prompt_id"] = results.index
         final_results = pd.concat([final_results, results], axis=0)
 
-    final_results.to_csv(os.path.join("metrics_task2.csv"), index=False)
-    # final_results.to_excel(os.path.join("metrics_task1.xlsx"), index=False)
+    final_results.to_csv(os.path.join("metrics_task5.csv"), index=False)

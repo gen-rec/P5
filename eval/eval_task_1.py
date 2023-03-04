@@ -73,10 +73,27 @@ if __name__ == "__main__":
 
     task_path_entries = recursive_path_finder(args.path, "task-1")
 
-    all_results = {task_path_entry: main(task_path_entry) for task_path_entry in task_path_entries}
+    all_results = {"/".join(task_path_entry.split(os.sep)[-5:]): main(task_path_entry) for task_path_entry in
+                   task_path_entries}
 
     # Write the results to a JSON file
-    for result in all_results:
-        all_results[result] = all_results[result].to_dict(orient="index")
+    for experiment_path in all_results:
+        all_results[experiment_path] = all_results[experiment_path]
 
-    json.dump(all_results, open(os.path.join("metrics_task1.json"), "w", encoding="utf-8"), indent=4)
+    columns = ["epoch", "token_method", "dataset", "trained_task", "prompt_id", "rmse", "mae", "acc", "f1", "precision", "recall",
+               "invalid", "rating_1", "rating_2", "rating_3", "rating_4", "rating_5"]
+    final_results = pd.DataFrame(columns=columns)
+    for experiment_path in all_results:
+        epoch, token_method, dataset, trained_task, _ = experiment_path.split("/")
+
+        # Concatenate the results
+        results = all_results[experiment_path]
+        results["epoch"] = epoch
+        results["token_method"] = token_method
+        results["dataset"] = dataset
+        results["trained_task"] = trained_task
+        results["prompt_id"] = results.index
+        final_results = pd.concat([final_results, results], axis=0)
+
+    final_results.to_csv(os.path.join("metrics_task1.csv"), index=False)
+    # final_results.to_excel(os.path.join("metrics_task1.xlsx"), index=False)
