@@ -54,21 +54,21 @@ def evaluate_sequential(pred, gt, k_list=None):
     return result
 
 
-def evaluate_generation(pred: list[str], gt: list[str]):
+def evaluate_generation(pred: list[str], gt: list[str], n_gram: int = 4):
     pred = [p.strip() for p in pred]
     gt = [g.strip() for g in gt]
     rouge = rouge_score(pred, gt)
 
     pred = [p.split() for p in pred]
     gt = [g.split() for g in gt]
-    bleu_4 = bleu_score(pred, gt, n_gram=4)
+    bleu = bleu_score(pred, gt, n_gram=n_gram)
 
     rouge_1 = rouge["rouge_1/f_score"]
     rouge_2 = rouge["rouge_2/f_score"]
     rouge_l = rouge["rouge_l/f_score"]
 
     return {
-        "bleu-4": bleu_4,
+        f"bleu-{n_gram}": bleu,
         "rouge-1": rouge_1,
         "rouge-2": rouge_2,
         "rouge-l": rouge_l,

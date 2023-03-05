@@ -11,7 +11,7 @@ from eval_utils import evaluate_binary, evaluate_rating, evaluate_sequential, re
 
 warnings.filterwarnings("ignore")
 
-keys = ["bleu-4", "rouge-1", "rouge-2", "rouge-l", "rmse", "mae", "invalid"]
+keys = ["bleu-2", "rouge-1", "rouge-2", "rouge-l", "rmse", "mae", "invalid"]
 keys += [f"rating_{i}" for i in range(1, 6)]
 
 
@@ -41,7 +41,7 @@ def main(path: str):
         if task_type in rating_tasks:
             evaluation = evaluate_rating(pred, gt)
         else:
-            evaluation = evaluate_generation(pred, gt)
+            evaluation = evaluate_generation(pred, gt, n_gram=2)
 
         for key, value in evaluation.items():
             print(f"  {key}: {value}")
