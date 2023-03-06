@@ -88,7 +88,7 @@ def main(model_name, data_name, batch, device):
     for line in open(os.path.join(data_path, "sequential_data.txt"), "r"):
         l = line.strip().split(" ")
         user_id = l[0]
-        item_id = l[1:]
+        item_id = l[1:-2]
         item_emb = [item2emb[i] for i in item_id]
         user_emb = torch.mean(torch.stack(item_emb), dim=0)
         user2emb[user_id] = user_emb
