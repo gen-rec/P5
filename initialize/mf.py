@@ -33,14 +33,14 @@ class MF(nn.Module):
 # noinspection PyTypeChecker
 class MFTrainer:
     def __init__(
-        self,
-        device: torch.device,
-        num_factors: int,
-        data_path: str,
-        epochs: int,
-        batch_size: int,
-        lr: float,
-        weight_decay: float,
+            self,
+            device: torch.device,
+            num_factors: int,
+            data_path: str,
+            epochs: int,
+            batch_size: int,
+            lr: float,
+            weight_decay: float,
     ):
         # Load Amazon ID to integer ID mapping
         datamaps = json.load(open(os.path.join(data_path, "datamaps.json"), "r", encoding="utf-8"))
@@ -76,7 +76,7 @@ class MFTrainer:
 
         self.user_mean_rating = defaultdict(lambda: 2.5)
         self.user_mean_rating.update(
-            {user_id: torch.tensor(ratings).mean() for user_id, ratings in user_ratings.items()}
+                {user_id: torch.tensor(ratings).mean() for user_id, ratings in user_ratings.items()}
         )
 
         self.train_dataset = [
@@ -157,10 +157,10 @@ class MFTrainer:
 
                     pred = self.model(user, item)
                     pred += torch.tensor(
-                        [
-                            self.user_mean_rating[self.id2user[str(user_id.item())]]
-                            for user_id in user
-                        ]
+                            [
+                                self.user_mean_rating[self.id2user[str(user_id.item() + 1)]]
+                                for user_id in user
+                            ]
                     ).to(self.device)
                     loss = self.loss_fn(pred, rating)
 
@@ -201,7 +201,7 @@ class MFTrainer:
 
                 pred = self.model(user, item)
                 pred += torch.tensor(
-                    [self.user_mean_rating[self.id2user[str(user_id.item())]] for user_id in user]
+                        [self.user_mean_rating[self.id2user[str(user_id.item() + 1)]] for user_id in user]
                 ).to(self.device)
                 loss = self.loss_fn(pred, rating)
 
@@ -232,13 +232,13 @@ class MFTrainer:
         embedding_dict["user_token_embedding"] = dict()
         for user_id in range(self.num_users):
             embedding_dict["user_token_embedding"]["user_" + str(user_id + 1)] = (
-                user_embedding[user_id]
+                user_embedding[user_id].clone()
             )
 
         embedding_dict["item_token_embedding"] = dict()
         for item_id in range(self.num_items):
             embedding_dict["item_token_embedding"]["item_" + str(item_id + 1)] = (
-                item_embedding[item_id]
+                item_embedding[item_id].clone()
             )
 
         pickle.dump(embedding_dict, open(save_path, "wb"))
@@ -252,15 +252,15 @@ def main(data_path: str):
     np.random.seed(306)
 
     trainer = MFTrainer(
-        device=torch.device("cuda"),
-        num_factors=512,
-        data_path=data_path,
-        epochs=20,
-        batch_size=512,
-        lr=0.0001,
-        weight_decay=0.01,
+            device=torch.device("cuda"),
+            num_factors=512,
+            data_path=data_path,
+            epochs=20,
+            batch_size=512,
+            lr=0.0001,
+            weight_decay=0.01,
     )
-    trainer.train()
+    trainer.train(False)
     trainer.test()
 
     trainer.save_embedding(os.path.join("initialize", "beauty_mf.pkl"))
