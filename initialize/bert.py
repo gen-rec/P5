@@ -56,8 +56,8 @@ def main(model_name, data_name, batch, device):
     id2item = datamap['id2item']
     user2id = datamap['user2id']
     id2user = datamap['id2user']
-    sorted_item_ids = sorted(item2id.values())
-    sorted_user_ids = sorted(user2id.values())
+    sorted_item_ids = list(id2item.keys())
+    sorted_user_ids = list(id2user.keys())
     meta = load_meta(data_path, datamap)
 
     # load the model
@@ -109,8 +109,8 @@ def main(model_name, data_name, batch, device):
     embedding_dict = {}
 
     embedding_dict['token_embedding'] = token_emb
-    embedding_dict['user_token_embedding'] = {f"user_{id}": user_emb[id] for id in sorted_user_ids}
-    embedding_dict['item_token_embedding'] = {f"item_{id}": item_emb[id] for id in sorted_item_ids}
+    embedding_dict['user_token_embedding'] = {f"user_{id}": user2emb[id] for id in sorted_user_ids}
+    embedding_dict['item_token_embedding'] = {f"item_{id}": item2emb[id] for id in sorted_item_ids}
 
 
     # save the embedding
@@ -121,7 +121,7 @@ def main(model_name, data_name, batch, device):
 
 if __name__ == '__main__':
     model_name = ("google/bert_uncased_L-8_H-512_A-8")
-    data_name = "toys"
+    data_name = "toy"
     batch = 32
     device = "cuda:1"
 
