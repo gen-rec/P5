@@ -4,11 +4,12 @@ export OMP_NUM_THREADS=8
 
 # Run with $ bash scripts/pretrain_P5_small_beauty.sh 4
 dataset=$1
-seeds="1398 42 2022"
+# seeds="1398 42 2022"
+seeds="1398"
 num_nodes=$2
 
 for seed in $seeds; do
-  name=$dataset-small-$seed-init
+  name=$dataset-small-$seed
   output=snap/$name/all
 
   mkdir -p "$output"
@@ -35,5 +36,6 @@ for seed in $seeds; do
     --max_text_length 512 \
     --gen_max_length 64 \
     --whole_word_embed \
-    --run_valid | tee "${output}.log"
+    --run_valid \
+    --extra_token_embedding ./initialize/toys_mf.pkl | tee "${output}.log"
 done
