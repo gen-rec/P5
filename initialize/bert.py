@@ -109,8 +109,8 @@ def main(model_name, data_name, batch, device):
     embedding_dict = {}
 
     embedding_dict['token_embedding'] = token_emb
-    embedding_dict['user_token_embedding'] = user_emb
-    embedding_dict['item_token_embedding'] = item_emb
+    embedding_dict['user_token_embedding'] = {f"user_{id}": user_emb[id] for id in sorted_user_ids}
+    embedding_dict['item_token_embedding'] = {f"item_{id}": item_emb[id] for id in sorted_item_ids}
 
 
     # save the embedding
