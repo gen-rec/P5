@@ -3,10 +3,13 @@ import json
 import os
 import pickle
 import random
+from collections import defaultdict
+from typing import Union
 
 import numpy as np
 import torch
 from torch import nn
+from torch.nn.functional import normalize
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -30,14 +33,14 @@ class MF(nn.Module):
 # noinspection PyTypeChecker
 class MFTrainer:
     def __init__(
-            self,
-            device: torch.device,
-            num_factors: int,
-            data_path: str,
-            epochs: int,
-            batch_size: int,
-            lr: float,
-            weight_decay: float,
+        self,
+        device: torch.device,
+        num_factors: int,
+        data_path: str,
+        epochs: int,
+        batch_size: int,
+        lr: float,
+        weight_decay: float,
     ):
         # Load Amazon ID to integer ID mapping
         datamaps = json.load(open(os.path.join(data_path, "datamaps.json"), "r", encoding="utf-8"))
@@ -62,11 +65,26 @@ class MFTrainer:
         raw_val = data_splits["val"]
         raw_test = data_splits["test"]
 
+        # Normalize ratings per user
+        user_ratings = defaultdict(list)
+        for data in raw_train:
+            user_ratings[data["reviewerID"]].append(data["overall"])
+        # for data in raw_val:
+        #     user_ratings[data["reviewerID"]].append(data["overall"])
+        # for data in raw_test:
+        #     user_ratings[data["reviewerID"]].append(data["overall"])
+
+        self.user_mean_rating = defaultdict(lambda: 2.5)
+        self.user_mean_rating.update(
+            {user_id: torch.tensor(ratings).mean() for user_id, ratings in user_ratings.items()}
+        )
+
         self.train_dataset = [
             (
                 int(self.user2id[data["reviewerID"]]) - 1,
                 int(self.item2id[data["asin"]]) - 1,
-                torch.tensor(data["overall"], dtype=torch.float32),
+                torch.tensor(data["overall"], dtype=torch.float32)
+                - self.user_mean_rating[data["reviewerID"]],
             )
             for data in raw_train
         ]
@@ -97,7 +115,7 @@ class MFTrainer:
         # Initialize loss function
         self.loss_fn = nn.MSELoss()
 
-    def train(self, set_to_best_model: bool = True):
+    def train(self, use_best_model: bool = True):
         train_dataloader = DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True)
         val_dataloader = DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False)
 
@@ -138,6 +156,12 @@ class MFTrainer:
                     rating = rating.to(self.device)
 
                     pred = self.model(user, item)
+                    pred += torch.tensor(
+                        [
+                            self.user_mean_rating[self.id2user[str(user_id.item())]]
+                            for user_id in user
+                        ]
+                    ).to(self.device)
                     loss = self.loss_fn(pred, rating)
 
                     val_loss += loss.item()
@@ -148,14 +172,15 @@ class MFTrainer:
 
             print(f"Validation loss: {val_loss:.4f}")
 
-            if val_loss < best_valid_loss:
+            if use_best_model and val_loss < best_valid_loss:
                 best_valid_loss = val_loss
                 best_valid_epoch = epoch
+
                 self.model.to("cpu")
                 best_valid_model = copy.deepcopy(self.model)
                 self.model.to(self.device)
 
-        if set_to_best_model:
+        if use_best_model:
             print(f"Best validation loss: {best_valid_loss:.4f} at epoch {best_valid_epoch}")
             self.model = best_valid_model
 
@@ -175,6 +200,9 @@ class MFTrainer:
                 rating = rating.to(self.device)
 
                 pred = self.model(user, item)
+                pred += torch.tensor(
+                    [self.user_mean_rating[self.id2user[str(user_id.item())]] for user_id in user]
+                ).to(self.device)
                 loss = self.loss_fn(pred, rating)
 
                 test_loss += loss.item()
@@ -186,24 +214,31 @@ class MFTrainer:
         print(f"Test loss: {test_loss:.4f}")
 
     def save_embedding(self, save_path):
-        embedding_dict: dict[str, torch.Tensor | dict[str, torch.Tensor]] = dict()
+        embedding_dict: dict[str, Union[torch.Tensor, dict[str, torch.Tensor]]] = dict()
+
+        user_embedding = self.model.user_factors.weight.detach().clone().cpu()
+        item_embedding = self.model.item_factors.weight.detach().clone().cpu()
+
+        # Normalize embeddings to unit length
+        user_embedding = normalize(user_embedding, dim=1)
+        item_embedding = normalize(item_embedding, dim=1)
 
         # Save user and item embeddings
-        embedding_dict["token_embedding"] = torch.cat([
-                self.model.user_factors.weight, self.model.item_factors.weight
-        ], dim=0).detach().clone().cpu()
+        embedding_dict["token_embedding"] = (
+            torch.cat([user_embedding, item_embedding], dim=0)
+        )
 
         # Save user and item embeddings separately
         embedding_dict["user_token_embedding"] = dict()
         for user_id in range(self.num_users):
             embedding_dict["user_token_embedding"]["user_" + str(user_id + 1)] = (
-                self.model.user_factors.weight[user_id].detach().clone().cpu()
+                user_embedding[user_id]
             )
 
         embedding_dict["item_token_embedding"] = dict()
         for item_id in range(self.num_items):
             embedding_dict["item_token_embedding"]["item_" + str(item_id + 1)] = (
-                self.model.item_factors.weight[item_id].detach().clone().cpu()
+                item_embedding[item_id]
             )
 
         pickle.dump(embedding_dict, open(save_path, "wb"))
@@ -217,13 +252,13 @@ def main(data_path: str):
     np.random.seed(306)
 
     trainer = MFTrainer(
-            device=torch.device("cuda"),
-            num_factors=512,
-            data_path=data_path,
-            epochs=50,
-            batch_size=512,
-            lr=0.0001,
-            weight_decay=0.01,
+        device=torch.device("cuda"),
+        num_factors=512,
+        data_path=data_path,
+        epochs=20,
+        batch_size=512,
+        lr=0.0001,
+        weight_decay=0.01,
     )
     trainer.train()
     trainer.test()
