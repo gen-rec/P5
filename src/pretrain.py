@@ -72,8 +72,9 @@ class Trainer(TrainerBase):
 
         ####
         # Initialize new token embeddings
-        prev_vocab_size = self.model.config.vocab_size
+        prev_vocab_size = 32_100
         print(f"** {prev_vocab_size} tokens in original tokenizer **")
+        print(f"** Resizing token embeddings from {self.model.shared.weight.shape[0]} to {len(self.tokenizer.vocab)}")
 
         new_token_embedding = self.model.resize_token_embeddings(len(self.tokenizer.vocab))
 
@@ -92,11 +93,12 @@ class Trainer(TrainerBase):
                 f"Extra token embedding dimension {extra_token_embedding.shape[1]} does not match " \
                 f"the model dimension {self.model.shared.weight.shape[1]}"
 
-            new_token_embedding.weight[prev_vocab_size:] = extra_token_embedding
+            with torch.no_grad():
+                new_token_embedding.weight[prev_vocab_size:] = extra_token_embedding
 
         print(
                 f"** {len(self.tokenizer.vocab) - prev_vocab_size} new tokens initialized "
-                f"({new_token_embedding.weight[prev_vocab_size:].shape})**"
+                f"({new_token_embedding.weight[prev_vocab_size:].shape}) **"
         )
         ####
 
@@ -429,15 +431,8 @@ def main_worker(gpu, args):
     if args.extra_token_embedding is None:
         embedding_weight = None
     else:
-        extra_token_embedding: dict[str, torch.Tensor] = pickle.load(open(args.extra_token_embedding, "rb"))
-
-        embedding_weight = []
-        for user_item_id in user_item_ids:
-            assert user_item_id in extra_token_embedding, \
-                f"User or item id {user_item_id} is not in the extra token embedding"
-            embedding_weight.append(extra_token_embedding[user_item_id])
-
-        embedding_weight = torch.stack(embedding_weight, dim=0)
+        extra_token_embedding = pickle.load(open(args.extra_token_embedding, "rb"))
+        embedding_weight = extra_token_embedding["token_embedding"]
     ####
 
     train_loader = get_loader(
