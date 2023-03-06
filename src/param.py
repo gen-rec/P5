@@ -117,6 +117,12 @@ def parse_args(parse=True, **optional_kwargs):
     # Do validation
     parser.add_argument("--run_valid", action="store_true")
 
+    # Load extra token embedding
+    parser.add_argument("--extra_token_embedding", type=str, default=None,
+                        help="Path to extra token embedding. The file should be a pickle file(.pkl), "
+                             "which is a serialized dictionary(dict[str, torch.Tensor])."
+                             "The key is the integer user/item ID and the value is the embedding vector.")
+
     # Parse the arguments.
     if parse:
         args = parser.parse_args()

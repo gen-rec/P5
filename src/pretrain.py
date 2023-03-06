@@ -1,6 +1,8 @@
 import json
+import pickle
 import os.path
 from pathlib import Path
+from typing import Optional
 
 import torch
 import torch.backends.cudnn as cudnn
@@ -34,7 +36,21 @@ from trainer_base import TrainerBase
 
 # The Trainer inherits TrainerBase in trainer_base.py
 class Trainer(TrainerBase):
-    def __init__(self, args, train_loader=None, val_loader=None, test_loader=None, train=True, tokenizer=None):
+    def __init__(
+            self, args, train_loader=None, val_loader=None, test_loader=None, train=True, tokenizer=None,
+            extra_token_embedding: Optional[torch.Tensor] = None
+    ):
+        """
+        Trainer for P5 model
+
+        :param args: Namespace object containing all the arguments
+        :param train_loader: Train dataloader
+        :param val_loader: Validation dataloader
+        :param test_loader: Test dataloader
+        :param train: Whether to train or not
+        :param tokenizer: Tokenizer object to use
+        :param extra_token_embedding: If provided, use this as extra token embedding(# of tokens, embedding dim)
+        """
         super().__init__(
                 args,
                 train_loader=train_loader,
@@ -61,8 +77,23 @@ class Trainer(TrainerBase):
 
         new_token_embedding = self.model.resize_token_embeddings(len(self.tokenizer.vocab))
 
-        torch.nn.init.xavier_normal_(new_token_embedding.weight[prev_vocab_size:],
-                                     gain=torch.nn.init.calculate_gain("linear"))
+        if extra_token_embedding is None:
+            # Random initialize
+            print("Randomly initializing new tokens...")
+            torch.nn.init.xavier_normal_(new_token_embedding.weight[prev_vocab_size:],
+                                         gain=torch.nn.init.calculate_gain("linear"))
+        else:
+            # Load extra token embedding
+            print("Loading from extra token embedding...")
+            assert extra_token_embedding.shape[0] == len(self.tokenizer.vocab) - prev_vocab_size, \
+                f"Extra token embedding size {extra_token_embedding.shape[0]} does not match " \
+                f"the number of new tokens {len(self.tokenizer.vocab) - prev_vocab_size}"
+            assert extra_token_embedding.shape[1] == self.model.shared.weight.shape[1], \
+                f"Extra token embedding dimension {extra_token_embedding.shape[1]} does not match " \
+                f"the model dimension {self.model.shared.weight.shape[1]}"
+
+            new_token_embedding.weight[prev_vocab_size:] = extra_token_embedding
+
         print(
                 f"** {len(self.tokenizer.vocab) - prev_vocab_size} new tokens initialized "
                 f"({new_token_embedding.weight[prev_vocab_size:].shape})**"
@@ -386,12 +417,27 @@ def main_worker(gpu, args):
     datamaps = json.load(open(os.path.join("data", args.train, "datamaps.json"), "r", encoding="utf-8"))
     user_ids = [f"user_{u}" for u in datamaps["user2id"].values()]
     item_ids = [f"item_{i}" for i in datamaps["item2id"].values()]
+    user_item_ids = user_ids + item_ids
 
-    num_added_tokens = tokenizer.add_tokens(user_ids + item_ids, special_tokens=True)
+    num_added_tokens = tokenizer.add_tokens(user_item_ids, special_tokens=True)
     print(f"Added {num_added_tokens} tokens to the tokenizer", flush=True)
 
     os.makedirs(os.path.join(args.output, f"tokenizer-{args.rank}"), exist_ok=True)
     tokenizer.save_pretrained(os.path.join(args.output, f"tokenizer-{args.rank}"))
+
+    # Load token embedding
+    if args.extra_token_embedding is None:
+        embedding_weight = None
+    else:
+        extra_token_embedding: dict[str, torch.Tensor] = pickle.load(open(args.extra_token_embedding, "rb"))
+
+        embedding_weight = []
+        for user_item_id in user_item_ids:
+            assert user_item_id in extra_token_embedding, \
+                f"User or item id {user_item_id} is not in the extra token embedding"
+            embedding_weight.append(extra_token_embedding[user_item_id])
+
+        embedding_weight = torch.stack(embedding_weight, dim=0)
     ####
 
     train_loader = get_loader(
@@ -444,7 +490,8 @@ def main_worker(gpu, args):
 
     args.verbose = True
 
-    trainer = Trainer(args, train_loader, val_loader, train=True, tokenizer=tokenizer)
+    trainer = Trainer(args, train_loader, val_loader, train=True, tokenizer=tokenizer,
+                      extra_token_embedding=embedding_weight)
     trainer.train()
 
 
