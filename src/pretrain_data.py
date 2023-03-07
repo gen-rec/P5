@@ -366,6 +366,11 @@ class P5_Amazon_Dataset(Dataset):
             else:
                 raise NotImplementedError
 
+            ###
+            purchase_history = [f"item_{i}" for i in purchase_history]
+            target_item = f"item_{target_item}"
+            ###
+
             task_candidates = self.task_list[task_name]
             task_idx = random.randint(0, len(task_candidates) - 1)  # random choose the task index for task_candidates
             task_template = self.all_tasks['sequential'][task_candidates[task_idx]]
@@ -424,7 +429,7 @@ class P5_Amazon_Dataset(Dataset):
                         else:
                             sample_ids = np.random.choice(self.all_item, candidate_num, replace=False,
                                                           p=self.probability)
-                        sample_ids = [str(item) for item in sample_ids if
+                        sample_ids = [f"item_{item}" for item in sample_ids if
                                       item not in user_seq and item not in candidate_samples]
                         candidate_samples.extend(sample_ids)
                     candidate_samples = candidate_samples[:candidate_num]
@@ -454,7 +459,7 @@ class P5_Amazon_Dataset(Dataset):
                         else:
                             sample_ids = np.random.choice(self.all_item, candidate_num, replace=False,
                                                           p=self.probability)
-                        sample_ids = [str(item) for item in sample_ids if
+                        sample_ids = [f"item_{item}" for item in sample_ids if
                                       item not in user_seq and item not in candidate_samples]
                         candidate_samples.extend(sample_ids)
                     candidate_samples = candidate_samples[:candidate_num]
@@ -806,14 +811,14 @@ class P5_Amazon_Dataset(Dataset):
                         sample_ids = np.random.choice(self.all_item, candidate_num, replace=False)
                     else:
                         sample_ids = np.random.choice(self.all_item, candidate_num, replace=False, p=self.probability)
-                    sample_ids = [str(item) for item in sample_ids if
+                    sample_ids = [f"item_{item}" for item in sample_ids if
                                   item not in user_seq and item not in candidate_samples]
                     candidate_samples.extend(sample_ids)
                 candidate_samples = candidate_samples[:candidate_num]
-                candidate_samples.extend([target_item])
+                candidate_samples.extend([f"item_{target_item}"])
                 random.shuffle(candidate_samples)
                 source_text = task_template['source'].format(user_desc, ' , '.join(candidate_samples))
-                target_text = task_template['target'].format(target_item)
+                target_text = task_template['target'].format(f"item_{target_item}")
             elif task_template['id'] == '5-7' or task_template['id'] == '5-8':
                 user_seq = self.user_items[user_id]
                 candidate_samples = []
@@ -823,14 +828,14 @@ class P5_Amazon_Dataset(Dataset):
                         sample_ids = np.random.choice(self.all_item, candidate_num, replace=False)
                     else:
                         sample_ids = np.random.choice(self.all_item, candidate_num, replace=False, p=self.probability)
-                    sample_ids = [str(item) for item in sample_ids if
+                    sample_ids = [f"item_{item}" for item in sample_ids if
                                   item not in user_seq and item not in candidate_samples]
                     candidate_samples.extend(sample_ids)
                 candidate_samples = candidate_samples[:candidate_num]
-                candidate_samples.extend([target_item])
+                candidate_samples.extend([f"item_{target_item}"])
                 random.shuffle(candidate_samples)
                 source_text = task_template['source'].format(user_id, ' , '.join(candidate_samples))
-                target_text = task_template['target'].format(target_item)
+                target_text = task_template['target'].format(f"item_{target_item}")
             else:
                 raise NotImplementedError
 
