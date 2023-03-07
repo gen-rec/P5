@@ -6,6 +6,7 @@ from typing import Optional
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from multiprocessing import Pool
 from transformers import T5TokenizerFast
 from pathlib import Path
 from param import parse_args
@@ -61,6 +62,31 @@ def main(args):
     evaluator.evaluate()
 
     return 1
+
+
+def create_loaders(task_id: str, reduce_batch_size: int, additional_args: dict):
+    """
+    Create dataloaders in parallel
+    :param task_id: Task ID (3-1)
+    :param reduce_batch_size: Reduce batch size by this factor
+    :param additional_args: Dictionary of arguments
+    :return: Dataloader
+    """
+    assert additional_args["task_name"] in additional_args["prompt_list"].keys(), "Task name is not in prompt list"
+
+    batch_size = args.batch_size
+    batch_size = batch_size // reduce_batch_size
+
+    return get_loader(
+            args=args,
+            task_list={additional_args["task_name"]: [task_id]},
+            sample_numbers=additional_args["sample_numbers"],
+            split=additional_args["data_type"],
+            batch_size=batch_size,
+            workers=4,
+            distributed=False,
+            tokenizer=additional_args["tokenizer"],
+    )
 
 
 class P5Evaluator():
@@ -164,11 +190,23 @@ class P5Evaluator():
         with open(os.path.join(self.output_dir, task_type, 'metrics.tsv'), 'a') as f:
             f.write(f"task\tRMSE\tMAE\n")
 
+        additional_args = {
+            "task_name": task_name,
+            "prompt_list": self.prompt_list,
+            "reduce_batch_size": 1,
+            "sample_numbers": self.sample_numbers,
+            "data_type": self.data_type,
+            "tokenizer": self.tokenizer,
+        }
+        with Pool(16) as p:
+            test_loaders = p.starmap(create_loaders, [(k, 1, additional_args) for k in self.prompt_list[task_name]])
+
         for prompt_num, prompt in enumerate(self.prompt_list[task_name]):
             print(f"{prompt}: {prompt_num + 1:>2d}/{len(self.prompt_list[task_name])}")
 
             # generate
-            test_loader = self.create_loader(task_name=task_name, prompt_list=[prompt])
+            # test_loader = self.create_loader(task_name=task_name, prompt_list=[prompt])
+            test_loader = test_loaders[prompt_num]
             source_text, gt, pred = self.generate_single(data_loader=test_loader)
             self.save_results(source_text=source_text, gt=gt, pred=pred, task_type=task_type, prompt=prompt)
 
@@ -210,10 +248,22 @@ class P5Evaluator():
         with open(os.path.join(self.output_dir, task_type, 'metrics.tsv'), 'a') as f:
             f.write(f"task\thit@5\tndcg@5\thit@10\tndcg@10\n")
 
+        additional_args = {
+            "task_name": task_name,
+            "prompt_list": self.prompt_list,
+            "reduce_batch_size": 32,
+            "sample_numbers": self.sample_numbers,
+            "data_type": self.data_type,
+            "tokenizer": self.tokenizer,
+        }
+        with Pool(16) as p:
+            test_loaders = p.starmap(create_loaders, [(k, 32 if k not in ['2-11', '2-12'] else 1, additional_args) for k in self.prompt_list[task_name]])
+
         for prompt_num, prompt in enumerate(self.prompt_list[task_name]):
             print(f"{prompt}: {prompt_num + 1:>2d}/{len(self.prompt_list[task_name])}")
-            test_loader = self.create_loader(task_name=task_name, prompt_list=[prompt],
-                                             reduce_batch_size=32 if prompt not in ['2-11', '2-12'] else 1)
+            # test_loader = self.create_loader(task_name=task_name, prompt_list=[prompt],
+            #                                  reduce_batch_size=32 if prompt not in ['2-11', '2-12'] else 1)
+            test_loader = test_loaders[prompt_num]
 
             # binary output
             if prompt in ['2-11', '2-12']:
@@ -253,12 +303,25 @@ class P5Evaluator():
         with open(os.path.join(self.output_dir, task_type, 'metrics.tsv'), 'a') as f:
             f.write(f"task\tBLEU4\trouge-1\trouge-2\trouge-l\n")
 
+        additional_args = {
+            "task_name": task_name,
+            "prompt_list": self.prompt_list,
+            "reduce_batch_size": 1,
+            "sample_numbers": self.sample_numbers,
+            "data_type": self.data_type,
+            "tokenizer": self.tokenizer,
+        }
+
+        with Pool(16) as p:
+            test_loaders = p.starmap(create_loaders, [(k, 1, additional_args) for k in self.prompt_list[task_name]])
+
         for prompt_num, prompt in enumerate(self.prompt_list[task_name]):
             os.makedirs(os.path.join(self.output_dir, task_type, prompt), exist_ok=True)
             print(f"{prompt}: {prompt_num + 1:>2d}/{len(self.prompt_list[task_name])}")
 
             # generate
-            test_loader = self.create_loader(task_name=task_name, prompt_list=[prompt])
+            # test_loader = self.create_loader(task_name=task_name, prompt_list=[prompt])
+            test_loader = test_loaders[prompt_num]
             source_text, gt, pred = self.generate_single(data_loader=test_loader)
             self.save_results(source_text=source_text, gt=gt, pred=pred, task_type=task_type, prompt=prompt)
 
@@ -285,12 +348,25 @@ class P5Evaluator():
         with open(os.path.join(self.output_dir, task_type, 'metrics.tsv'), 'a') as f:
             f.write(f"task\tBLEU2\trouge-1\trouge-2\trouge-l\n")
 
+        additional_args = {
+            "task_name": task_name,
+            "prompt_list": self.prompt_list,
+            "reduce_batch_size": 1,
+            "sample_numbers": self.sample_numbers,
+            "data_type": self.data_type,
+            "tokenizer": self.tokenizer,
+        }
+
+        with Pool(16) as p:
+            test_loaders = p.starmap(create_loaders, [(k, 1, additional_args) for k in self.prompt_list[task_name]])
+
         for prompt_num, prompt in enumerate(self.prompt_list[task_name]):
             os.makedirs(os.path.join(self.output_dir, task_type, prompt), exist_ok=True)
             print(f"{prompt}: {prompt_num + 1:>2d}/{len(self.prompt_list[task_name])}")
 
             # generate
-            test_loader = self.create_loader(task_name=task_name, prompt_list=[prompt], )
+            # test_loader = self.create_loader(task_name=task_name, prompt_list=[prompt], )
+            test_loader = test_loaders[prompt_num]
             source_text, gt, pred = self.generate_single(data_loader=test_loader)
             self.save_results(source_text=source_text, gt=gt, pred=pred, task_type=task_type, prompt=prompt)
 
@@ -339,13 +415,26 @@ class P5Evaluator():
         with open(os.path.join(self.output_dir, task_type, 'metrics.tsv'), 'a') as f:
             f.write(f"task\thit@5\thit@5\tndcg@5\thit@10\tndcg@10\n")
 
+        additional_args = {
+            "task_name": task_name,
+            "prompt_list": self.prompt_list,
+            "reduce_batch_size": 1,
+            "sample_numbers": self.sample_numbers,
+            "data_type": self.data_type,
+            "tokenizer": self.tokenizer,
+        }
+
+        with Pool(16) as p:
+            test_loaders = p.starmap(create_loaders, [(k, 32 if k in ['5-5', '5-6', '5-7', '5-8'] else 1, additional_args) for k in self.prompt_list[task_name]])
+
         for prompt_num, prompt in enumerate(self.prompt_list[task_name]):
             os.makedirs(os.path.join(self.output_dir, task_type, prompt), exist_ok=True)
             print(f"{prompt}: {prompt_num + 1:>2d}/{len(self.prompt_list[task_name])}")
 
             # generate
-            test_loader = self.create_loader(task_name=task_name, prompt_list=[prompt],
-                                             reduce_batch_size=32 if prompt in ['5-5', '5-6', '5-7', '5-8'] else 1)
+            # test_loader = self.create_loader(task_name=task_name, prompt_list=[prompt],
+            #                                  reduce_batch_size=32 if prompt in ['5-5', '5-6', '5-7', '5-8'] else 1)
+            test_loader = test_loaders[prompt_num]
             if prompt in ['5-1', '5-2', '5-3', '5-4']:  # binary output
                 source_text, gt, pred = self.generate_single(data_loader=test_loader)
                 self.save_results(source_text=source_text, gt=gt, pred=pred, task_type=task_type, prompt=prompt)
@@ -431,7 +520,8 @@ class P5Evaluator():
                         num_return_sequences=self.args.num_beams,
                         early_stopping=True,
                 )  # batch * num_beams * max_length
-                generated = self.tokenizer.batch_decode(results, skip_special_tokens=True)
+                results = results[..., 1].unsqueeze(dim=-1)
+                generated = self.tokenizer.batch_decode(results)
                 source_text.extend(batch['source_text'])
                 gt.extend(batch['target_text'])
                 for j in range(0, len(generated), self.args.num_beams):
