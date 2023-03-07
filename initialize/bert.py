@@ -96,6 +96,13 @@ def main(model_name, data_name, batch, device):
 
         assert user2emb[user_id].shape == (512,)
 
+    # Normalize to unit length
+    for id in user2emb.keys():
+        user2emb[id] = user2emb[id] / torch.norm(user2emb[id])
+
+    for id in item2emb.keys():
+        item2emb[id] = item2emb[id] / torch.norm(item2emb[id])
+
     # concatenate the user and item embeddings
     user_emb = torch.stack([user2emb[id] for id in sorted_user_ids])
     item_emb = torch.stack([item2emb[id] for id in sorted_item_ids])
