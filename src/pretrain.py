@@ -81,8 +81,7 @@ class Trainer(TrainerBase):
         if extra_token_embedding is None:
             # Random initialize
             print("Randomly initializing new tokens...")
-            torch.nn.init.xavier_normal_(new_token_embedding.weight[prev_vocab_size:],
-                                         gain=torch.nn.init.calculate_gain("linear"))
+            torch.nn.init.normal_(new_token_embedding.weight[prev_vocab_size:], std=0.1)
         else:
             # Load extra token embedding
             print("Loading from extra token embedding...")
