@@ -23,7 +23,6 @@ def main(path: str):
     all_result = {k: [] for k in keys}
 
     output_path = os.path.join(
-            os.path.pardir,
             path
     )
     for task_type in tasks:
@@ -57,10 +56,16 @@ def main(path: str):
                     gt_gen.append(g.split(", ", maxsplit=1)[1])
 
                 else:
-                    pred_rp.append(p_rating)
-                    pred_gen.append(p.split(",", maxsplit=1)[1])
-                    gt_rp.append(g_rating)
-                    gt_gen.append(g.split(", ", maxsplit=1)[1])
+                    try:
+                        _, pred_gen_ = p.split(",", maxsplit=1)
+                        _, gt_gen_ = g.split(", ", maxsplit=1)
+                    except IndexError or ValueError:
+                        pass
+                    else:
+                        pred_rp.append(p_rating)
+                        gt_rp.append(g_rating)
+                        pred_gen.append(pred_gen_)
+                        gt_gen.append(gt_gen_)
 
             evaluation_rating = evaluate_rating(pred_rp, gt_rp)
             evaluation_rating["invalid"] = invalid

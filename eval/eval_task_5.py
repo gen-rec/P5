@@ -22,7 +22,6 @@ def main(path: str):
                   "precision": [], "recall": [], "invalid": []}
 
     output_path = os.path.join(
-            os.path.pardir,
             path
     )
     for task_type in task:

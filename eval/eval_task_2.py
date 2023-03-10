@@ -20,7 +20,6 @@ def main(path: str):
     all_result = {k: [] for k in keys}
 
     output_path = os.path.join(
-            os.path.pardir,
             path
     )
     for task_type in task:
