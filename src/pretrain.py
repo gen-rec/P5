@@ -80,8 +80,12 @@ class Trainer(TrainerBase):
 
         if extra_token_embedding is None:
             # Random initialize
-            print("Randomly initializing new tokens...")
-            torch.nn.init.normal_(new_token_embedding.weight[prev_vocab_size:], std=0.1)
+            nte_mean = torch.mean(new_token_embedding.weight[:prev_vocab_size]).item()
+            nte_std = torch.std(new_token_embedding.weight[:prev_vocab_size]).item()
+
+            print(f"Randomly initializing new tokens... (mean: {nte_mean:.3f}, std: {nte_std:.3f})")
+
+            torch.nn.init.normal_(new_token_embedding.weight[prev_vocab_size:], mean=nte_mean, std=nte_std)
         else:
             # Load extra token embedding
             print("Loading from extra token embedding...")

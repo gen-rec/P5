@@ -503,7 +503,7 @@ class P5_Amazon_Dataset(Dataset):
                         candidate_samples.extend(sample_ids)
                     candidate_samples = candidate_samples[:candidate_num]
                     source_text = task_template['source'].format(user_id, symbol.join(purchase_history),
-                                                                 candidate_samples[0])
+                                                                 "item_" + candidate_samples[0])
                     target_text = task_template['target'].format('no')
             elif task_template['id'] == '2-12':
                 symbol_prob = random.random()
@@ -530,7 +530,7 @@ class P5_Amazon_Dataset(Dataset):
                         candidate_samples.extend(sample_ids)
                     candidate_samples = candidate_samples[:candidate_num]
                     source_text = task_template['source'].format(user_desc, symbol.join(purchase_history),
-                                                                 candidate_samples[0])
+                                                                 "item_" + candidate_samples[0])
                     target_text = task_template['target'].format('no')
             elif task_template['id'] == '2-13':
                 rand_prob = random.random()
