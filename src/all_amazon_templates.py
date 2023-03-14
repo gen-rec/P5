@@ -280,11 +280,11 @@ HR, NDCG, MRR
 '''
 
 template[
-    'source'] = "user: user_{} items: {}"
+    'source'] = "items: {}"
 template['target'] = "{}"
 template['task'] = "sequential"
-template['source_argc'] = 2
-template['source_argv'] = ['user_id', 'purchase_history']
+template['source_argc'] = 1
+template['source_argv'] = ['purchase_history']
 template['target_argc'] = 1
 template['target_argv'] = ['item_id']
 template['id'] = "2-1"
@@ -292,136 +292,6 @@ template['id'] = "2-1"
 task_subgroup_2["2-1"] = template
 
 template = {}
-'''
-Input template:
-I find the purchase history list of user {{user_id}}:
-{{history item list of {{item_id}}}}
-I wonder which is the next item to recommend to the user. Can you help me decide?
- 
- 
-Target template:
-{{item [item_id]}}
- 
- 
-Metrics:
-HR, NDCG, MRR
-'''
-template[
-    'source'] = "user: user_{} items: {}"
-template['target'] = "{}"
-template['task'] = "sequential"
-template['source_argc'] = 2
-template['source_argv'] = ['user_id', 'purchase_history']
-template['target_argc'] = 1
-template['target_argv'] = ['item_id']
-template['id'] = "2-2"
-
-task_subgroup_2["2-2"] = template
-
-template = {}
-'''
-Input template:
-Here is the purchase history list of user {{user_id}}:
-{{history item list of {{item_id}}}}
-try to recommend next item to the user
- 
-Target template:
-{{item [item_id]}}
- 
- 
-Metrics:
-HR, NDCG, MRR
-'''
-template['source'] = "user: user_{} items: {}"
-template['target'] = "{}"
-template['task'] = "sequential"
-template['source_argc'] = 2
-template['source_argv'] = ['user_id', 'purchase_history']
-template['target_argc'] = 1
-template['target_argv'] = ['item_id']
-template['id'] = "2-3"
-
-task_subgroup_2["2-3"] = template
-
-template = {}
-
-'''
-Input template:
-Given the following purchase history of {{user_desc}}:
-{{history item list of {{item_id}}}}
-predict next possible item for the user
- 
- 
-Target template:
-{{item [item_id]}}
- 
- 
-Metrics:
-HR, NDCG, MRR
-'''
-
-template['source'] = "user: {} items: {}"
-template['target'] = "{}"
-template['task'] = "sequential"
-template['source_argc'] = 2
-template['source_argv'] = ['user_desc', 'purchase_history']
-template['target_argc'] = 1
-template['target_argv'] = ['item_id']
-template['id'] = "2-4"
-
-task_subgroup_2["2-4"] = template
-
-template = {}
-'''
-Input template:
-Based on the purchase history of {{user_desc}}:
-{{history item list of {{item_id}}}}
-Can you decide the next item likely to be purchased by the user?
- 
- 
-Target template:
-{{item [item_id]}}
- 
- 
-Metrics:
-HR, NDCG, MRR
-'''
-template[
-    'source'] = "user: {} items: {}"
-template['target'] = "{}"
-template['task'] = "sequential"
-template['source_argc'] = 2
-template['source_argv'] = ['user_desc', 'purchase_history']
-template['target_argc'] = 1
-template['target_argv'] = ['item_id']
-template['id'] = "2-5"
-
-task_subgroup_2["2-5"] = template
-
-template = {}
-'''
-Input template:
-Here is the purchase history of {{user_desc}}:
-{{history item list of {{item_id}}}}
-What to recommend next for the user?
- 
-Target template:
-{{item [item_id]}}
- 
- 
-Metrics:
-HR, NDCG, MRR
-'''
-template['source'] = "user: {} items: {}"
-template['target'] = "{}"
-template['task'] = "sequential"
-template['source_argc'] = 2
-template['source_argv'] = ['user_desc', 'purchase_history']
-template['target_argc'] = 1
-template['target_argv'] = ['item_id']
-template['id'] = "2-6"
-
-task_subgroup_2["2-6"] = template
 
 # Extractive QA
 template = {}
@@ -441,98 +311,16 @@ Metrics:
 HR, NDCG, MRR
 '''
 template[
-    'source'] = "user: user_{} items: {} candidates: {}"
+    'source'] = "items: {} candidates: {}"
 template['target'] = "{}"
 template['task'] = "sequential"
-template['source_argc'] = 3
-template['source_argv'] = ['user_id', 'purchase_history', 'candidates']
+template['source_argc'] = 2
+template['source_argv'] = ['purchase_history', 'candidates']
 template['target_argc'] = 1
 template['target_argv'] = ['item_id']
 template['id'] = "2-7"
 
 task_subgroup_2["2-7"] = template
-
-template = {}
-'''
-Input template:
-Given the following purchase history of {{user_desc}}:
-{{history item list of {{item_id}}}}
-What to recommend next for the user? Select one from the following items:
-{{candidate {{item_id}}}}
- 
-Target template:
-{{item [item_id]}}
- 
- 
-Metrics:
-HR, NDCG, MRR
-'''
-template[
-    'source'] = "user: {} items: {} candidates: {}"
-template['target'] = "{}"
-template['task'] = "sequential"
-template['source_argc'] = 3
-template['source_argv'] = ['user_desc', 'purchase_history', 'candidates']
-template['target_argc'] = 1
-template['target_argv'] = ['item_id']
-template['id'] = "2-8"
-
-task_subgroup_2["2-8"] = template
-
-template = {}
-'''
-Input template:
-Based on the purchase history of user {{user_id}}:
-{{history item list of {{item_id}}}}
-Choose the next possible purchased item from the following candidates:
-{{candidate {{item_id}}}}
- 
- 
-Target template:
-{{item [item_id]}}
- 
- 
-Metrics:
-HR, NDCG, MRR
-'''
-template[
-    'source'] = "user: user_{} items: {} candidates: {}"
-template['target'] = "{}"
-template['task'] = "sequential"
-template['source_argc'] = 3
-template['source_argv'] = ['user_id', 'purchase_history', 'candidates']
-template['target_argc'] = 1
-template['target_argv'] = ['item_id']
-template['id'] = "2-9"
-
-task_subgroup_2["2-9"] = template
-
-template = {}
-'''
-Input template:
-I find the purchase history list of {{user_desc}}:
-{{history item list of {{item_id}}}}
-I wonder which is the next item to recommend to the user. Try to select one from the following candidates:
-{{candidate {{item_id}}}}
- 
-Target template:
-{{item [item_id]}}
- 
- 
-Metrics:
-HR, NDCG, MRR
-'''
-template[
-    'source'] = "user: {} items: {} candidates: {}"
-template['target'] = "{}"
-template['task'] = "sequential"
-template['source_argc'] = 3
-template['source_argv'] = ['user_desc', 'purchase_history', 'candidates']
-template['target_argc'] = 1
-template['target_argv'] = ['item_id']
-template['id'] = "2-10"
-
-task_subgroup_2["2-10"] = template
 
 # Pairwise Prediction
 template = {}
@@ -548,67 +336,16 @@ Target template:
 Metrics:
 Accuracy
 '''
-template['source'] = "user: user_{} items: {} target: {}"
+template['source'] = "items: {} target: {}"
 template['target'] = "{}"
 template['task'] = "sequential"
 template['source_argc'] = 3
-template['source_argv'] = ['user_id', 'purchase_history', 'item_id']
+template['source_argv'] = ['purchase_history', 'item_id']
 template['target_argc'] = 1
 template['target_argv'] = ['yes_no']
 template['id'] = "2-11"
 
 task_subgroup_2["2-11"] = template
-
-template = {}
-'''
-Input template:
-According to {{user_desc}}'s purchase history list:
-{{history item list of {{item_id}}}}
-Predict whether the user will purchase {{item [item_id]}} next?
- 
-Target template:
-{{answer_choices[label]}} (yes/no)
- 
-Metrics:
-Accuracy
-'''
-template[
-    'source'] = "user: {} items: {} target: {}"
-template['target'] = "{}"
-template['task'] = "sequential"
-template['source_argc'] = 3
-template['source_argv'] = ['user_desc', 'purchase_history', 'item_id']
-template['target_argc'] = 1
-template['target_argv'] = ['yes_no']
-template['id'] = "2-12"
-
-task_subgroup_2["2-12"] = template
-
-template = {}
-'''
-Input template:
-According to the purchase history of {{user_desc}}:
-{{history item list of {{item_id}}}}
-Can you recommend the next possible item to the user?
- 
-Target template:
-{{item [item_id]}}
- 
- 
-Metrics:
-HR, NDCG, MRR
-'''
-template[
-    'source'] = "user: {} items: {}"
-template['target'] = "{}"
-template['task'] = "sequential"
-template['source_argc'] = 2
-template['source_argv'] = ['user_desc', 'purchase_history']
-template['target_argc'] = 1
-template['target_argv'] = ['item_id']
-template['id'] = "2-13"
-
-task_subgroup_2["2-13"] = template
 
 all_tasks['sequential'] = task_subgroup_2
 
