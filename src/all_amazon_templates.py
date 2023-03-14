@@ -280,7 +280,7 @@ HR, NDCG, MRR
 '''
 
 template[
-    'source'] = "Given the following purchase history of user_{} : \n {} \n predict next possible item to be purchased by the user ?"
+    'source'] = "user: user_{} items: {}"
 template['target'] = "{}"
 template['task'] = "sequential"
 template['source_argc'] = 2
@@ -307,7 +307,7 @@ Metrics:
 HR, NDCG, MRR
 '''
 template[
-    'source'] = "I find the purchase history list of user_{} : \n {} \n I wonder what is the next item to recommend to the user . Can you help me decide ?"
+    'source'] = "user: user_{} items: {}"
 template['target'] = "{}"
 template['task'] = "sequential"
 template['source_argc'] = 2
@@ -332,7 +332,7 @@ Target template:
 Metrics:
 HR, NDCG, MRR
 '''
-template['source'] = "Here is the purchase history list of user_{} : \n {} \n try to recommend next item to the user"
+template['source'] = "user: user_{} items: {}"
 template['target'] = "{}"
 template['task'] = "sequential"
 template['source_argc'] = 2
@@ -360,7 +360,7 @@ Metrics:
 HR, NDCG, MRR
 '''
 
-template['source'] = "Given the following purchase history of {} : \n {} \n predict next possible item for the user"
+template['source'] = "user: {} items: {}"
 template['target'] = "{}"
 template['task'] = "sequential"
 template['source_argc'] = 2
@@ -387,7 +387,7 @@ Metrics:
 HR, NDCG, MRR
 '''
 template[
-    'source'] = "Based on the purchase history of {} : \n {} \n Can you decide the next item likely to be purchased by the user ?"
+    'source'] = "user: {} items: {}"
 template['target'] = "{}"
 template['task'] = "sequential"
 template['source_argc'] = 2
@@ -412,7 +412,7 @@ Target template:
 Metrics:
 HR, NDCG, MRR
 '''
-template['source'] = "Here is the purchase history of {} : \n {} \n What to recommend next for the user ?"
+template['source'] = "user: {} items: {}"
 template['target'] = "{}"
 template['task'] = "sequential"
 template['source_argc'] = 2
@@ -441,7 +441,7 @@ Metrics:
 HR, NDCG, MRR
 '''
 template[
-    'source'] = "Here is the purchase history of user_{} : \n {} \n Select the next possible item likely to be purchased by the user from the following candidates : \n {}"
+    'source'] = "user: user_{} items: {} candidates: {}"
 template['target'] = "{}"
 template['task'] = "sequential"
 template['source_argc'] = 3
@@ -468,7 +468,7 @@ Metrics:
 HR, NDCG, MRR
 '''
 template[
-    'source'] = "Given the following purchase history of {} : \n {} \n What to recommend next for the user? Select one from the following items : \n {}"
+    'source'] = "user: {} items: {} candidates: {}"
 template['target'] = "{}"
 template['task'] = "sequential"
 template['source_argc'] = 3
@@ -496,7 +496,7 @@ Metrics:
 HR, NDCG, MRR
 '''
 template[
-    'source'] = "Based on the purchase history of user_{} : \n {} \n Choose the next possible purchased item from the following candidates : \n {}"
+    'source'] = "user: user_{} items: {} candidates: {}"
 template['target'] = "{}"
 template['task'] = "sequential"
 template['source_argc'] = 3
@@ -523,7 +523,7 @@ Metrics:
 HR, NDCG, MRR
 '''
 template[
-    'source'] = "I find the purchase history list of {} : \n {} \n I wonder which is the next item to recommend to the user . Try to select one from the following candidates : \n {}"
+    'source'] = "user: {} items: {} candidates: {}"
 template['target'] = "{}"
 template['task'] = "sequential"
 template['source_argc'] = 3
@@ -548,7 +548,7 @@ Target template:
 Metrics:
 Accuracy
 '''
-template['source'] = "user_{} has the following purchase history : \n {} \n does the user likely to buy {} next ?"
+template['source'] = "user: user_{} items: {} target: {}"
 template['target'] = "{}"
 template['task'] = "sequential"
 template['source_argc'] = 3
@@ -573,7 +573,7 @@ Metrics:
 Accuracy
 '''
 template[
-    'source'] = "According to {} 's purchase history list : \n {} \n Predict whether the user will purchase {} next ?"
+    'source'] = "user: {} items: {} target: {}"
 template['target'] = "{}"
 template['task'] = "sequential"
 template['source_argc'] = 3
@@ -599,7 +599,7 @@ Metrics:
 HR, NDCG, MRR
 '''
 template[
-    'source'] = "According to the purchase history of {} : \n {} \n Can you recommend the next possible item to the user ?"
+    'source'] = "user: {} items: {}"
 template['target'] = "{}"
 template['task'] = "sequential"
 template['source_argc'] = 2
