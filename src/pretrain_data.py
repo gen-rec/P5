@@ -429,7 +429,7 @@ class P5_Amazon_Dataset(Dataset):
                         else:
                             sample_ids = np.random.choice(self.all_item, candidate_num, replace=False,
                                                           p=self.probability)
-                        sample_ids = [f"item_{item}" for item in sample_ids if
+                        sample_ids = [str(item) for item in sample_ids if
                                       item not in user_seq and item not in candidate_samples]
                         candidate_samples.extend(sample_ids)
                     candidate_samples = candidate_samples[:candidate_num]
@@ -438,6 +438,7 @@ class P5_Amazon_Dataset(Dataset):
                     candidate_samples = self.negative_samples[int(user_id) - 1].split(' ', 1)[1].split(' ')
                 else:
                     raise NotImplementedError
+                candidate_samples = [f"item_{item}" for item in candidate_samples]
                 candidate_samples.extend([target_item])
                 random.shuffle(candidate_samples)
                 rand_prob = random.random()
@@ -459,7 +460,7 @@ class P5_Amazon_Dataset(Dataset):
                         else:
                             sample_ids = np.random.choice(self.all_item, candidate_num, replace=False,
                                                           p=self.probability)
-                        sample_ids = [f"item_{item}" for item in sample_ids if
+                        sample_ids = [str(item) for item in sample_ids if
                                       item not in user_seq and item not in candidate_samples]
                         candidate_samples.extend(sample_ids)
                     candidate_samples = candidate_samples[:candidate_num]
@@ -468,6 +469,7 @@ class P5_Amazon_Dataset(Dataset):
                     candidate_samples = self.negative_samples[int(user_id) - 1].split(' ', 1)[1].split(' ')
                 else:
                     raise NotImplementedError
+                candidate_samples = [f"item_{item}" for item in candidate_samples]
                 candidate_samples.extend([target_item])
                 random.shuffle(candidate_samples)
                 rand_prob = random.random()
